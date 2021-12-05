@@ -60,6 +60,12 @@ const int ltStepPin = 52; //left stepper motor step pin (pin 46 for wireless)
 const int ltDirPin = 53;  //left stepper motor direction pin (no change in pin for wireless)
 const int stepTime = 500; //delay time between high and low on step pin
 
+//define robot features
+const int stepsPerRotation = 800;               //800 steps make one full wheel rotation
+const float wheelDiameter = 3;                  //wheel diameter in inches
+const int defaultRightWheelSpeed = 100;         // default speed for the right Wheel (speeds has been tested from Lab1)
+const int defaultLeftWheelSpeed = 100;          // default speed for the left Wheel (speeds has been tested from Lab1)
+
 AccelStepper stepperRight(AccelStepper::DRIVER, rtStepPin, rtDirPin);//create instance of right stepper motor object (2 driver pins, low to high transition step pin 52, direction input pin 53 (high means forward)
 AccelStepper stepperLeft(AccelStepper::DRIVER, ltStepPin, ltDirPin);//create instance of left stepper motor object (2 driver pins, step pin 50, direction input pin 51)
 MultiStepper steppers;//create instance to control multiple steppers at the same time
@@ -111,11 +117,18 @@ void setup()
 void loop()
 {
   //uncomment each function one at a time to see what the code does
-  move1();//call move back and forth function
-  move2();//call move back and forth function with AccelStepper library functions
-  move3();//call move back and forth function with MultiStepper library functions
+ // move1();//call move back and forth function
+ //move2();//call move back and forth function with AccelStepper library functions
+ // move3();//call move back and forth function with MultiStepper library functions
   //move4(); //move to target position with 2 different speeds
   //move5(); //move continuously with 2 different speeds
+
+  forward(204);
+  stop();
+  reverse(204);
+  stop();
+
+  delay(10000);
 }
 
 /*
@@ -171,8 +184,8 @@ void move2() {
   digitalWrite(ylwLED, LOW);//turn off yellow LED
   stepperRight.moveTo(800);//move one full rotation forward relative to current position
   stepperLeft.moveTo(800);//move one full rotation forward relative to current position
-  stepperRight.setSpeed(1000);//set right motor speed
-  stepperLeft.setSpeed(1000);//set left motor speed
+  stepperRight.setSpeed(100);//set right motor speed
+  stepperLeft.setSpeed(100);//set left motor speed
   stepperRight.runSpeedToPosition();//move right motor
   stepperLeft.runSpeedToPosition();//move left motor
   runToStop();//run until the robot reaches the target
@@ -308,20 +321,61 @@ void spin(int direction) {
 */
 void turn(int direction) {
 }
+
+
+
+
+
 /*
-  INSERT DESCRIPTION HERE, what are the inputs, what does it do, functions used
-*/
+   The forward() function uses the AccelStepper library
+   The robot will move forward from the given distance in inches
+   The robot speed is set to 100
+   Maximum distance = 204 inches
+ * 
+ * move() is a library function for relative movement to set a target position
+   runSpeed() is a library function that uses constant speed to achieve target position, no blocking
+   runSpeedToPosition() is a library function that uses constant speed to achieve target posiiton, no blocking
+   setCurrentPosition() is a library function 
+  
+ * runToStop() is a written function to execute runSpeedToPosition() as a blocking
+ 
+ * Refer to move2() for more details
+ */
+
 void forward(int distance) {
+  int stepsToTake = stepsPerRotation*distance/(PI*wheelDiameter); //calculate how many steps to go to distance
+  stepperRight.move(stepsToTake);//move one full rotation forward relative to current position
+  stepperLeft.move(stepsToTake);//move one full rotation forward relative to current position
+  stepperRight.setSpeed(defaultRightWheelSpeed);//set right motor speed
+  stepperLeft.setSpeed(defaultLeftWheelSpeed);//set left motor speed
+  stepperRight.runSpeedToPosition();//move right motor
+  stepperLeft.runSpeedToPosition();//move left motor
+  runToStop();//run until the robot reaches the
 }
+
+
+
 /*
-  INSERT DESCRIPTION HERE, what are the inputs, what does it do, functions used
+   The reverse() function uses the AccelStepper library
+   The robot will move backwards from the given distance in inches
+   Maximum distance = 204 inches
+
+ * forward() is a written function to more robot forward set distance
+  
+ * Refer to forward() for more details
 */
 void reverse(int distance) {
+  forward(-distance);
 }
+
+
 /*
-  INSERT DESCRIPTION HERE, what are the inputs, what does it do, functions used
+   The stop() function uses the AccelStepper library
+   The robot will stop all movement when called
 */
 void stop() {
+  stepperRight.setSpeed(0);//set right motor speed
+  stepperLeft.setSpeed(0);//set left motor speed
 }
 
 
