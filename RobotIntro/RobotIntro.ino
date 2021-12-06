@@ -190,7 +190,15 @@ void pivot(int direction) {
    runAtSpeedToPosition() is a written function that uses constant speed to achieve target positon for both steppers, no blocking
 */
 void spin(int direction) {
+  int stepsToTake = stepsPerRotation*distance/(PI*wheelDiameter); //calculate how many steps to go to distance
+  int directionUnitV = direction / abs(direction);
   
+  stepperRight.move(stepsToTake * directionUnitV);//move one full rotation forward relative to current position
+  stepperLeft.move(-stepsToTake * directionUnitV);//move one full rotation forward relative to current position
+  stepperRight.setSpeed(defaultRightWheelSpeed * directionUnitV);//set right motor speed
+  stepperLeft.setSpeed(-defaultLeftWheelSpeed * directionUnitV);//set left motor speed
+  runAtSpeedToPosition(); //run both stepper to set position
+  runToStop();//run until the robot reaches the  
 }
 
 /*
