@@ -130,7 +130,7 @@ void loop()
 //  reverse(204);
 //  stop();
 
-  moveCircle(6,-1);
+//  moveCircle(6,-1);
 
   delay(1000);
 }
@@ -286,8 +286,8 @@ void moveCircle(int diam, int dir) {
   float innerDis = (r-dleft)*PI*2;
   float outerDis = (r+dright)*PI*2;
   
-  int innersteps = stepsPerRotation*innerDis/(PI*wheelDiameter);
-  int outersteps = stepsPerRotation*outerDis/(PI*wheelDiameter);
+  int innersteps = stepsPerRotation*innerDis/(PI*wheelDiameter)*0.96;
+  int outersteps = stepsPerRotation*outerDis/(PI*wheelDiameter)*0.94;
   
   if (dir > 0){
     int vinner = w*(r-dleft);
