@@ -65,6 +65,8 @@ const int stepsPerRotation = 800;               //800 steps make one full wheel 
 const float wheelDiameter = 3.375;                  //wheel diameter in inches
 const int defaultRightWheelSpeed = 100;         // default speed for the right Wheel (speeds has been tested from Lab1)
 const int defaultLeftWheelSpeed = 100;          // default speed for the left Wheel (speeds has been tested from Lab1)
+const float dleft = 4.25;
+const float dright = 4.25;
 
 AccelStepper stepperRight(AccelStepper::DRIVER, rtStepPin, rtDirPin);//create instance of right stepper motor object (2 driver pins, low to high transition step pin 52, direction input pin 53 (high means forward)
 AccelStepper stepperLeft(AccelStepper::DRIVER, ltStepPin, ltDirPin);//create instance of left stepper motor object (2 driver pins, step pin 50, direction input pin 51)
@@ -111,7 +113,7 @@ void setup()
   digitalWrite(stepperEnable, stepperEnTrue);//turns on the stepper motor driver
   digitalWrite(enableLED, HIGH);//turn on enable LED
   delay(pauseTime); //always wait 2.5 seconds before the robot moves
-  //Serial.begin(9600); //start serial communication at 9600 baud rate for debugging
+  Serial.begin(9600); //start serial communication at 9600 baud rate for debugging
 }
 
 void loop()
@@ -123,12 +125,14 @@ void loop()
   //move4(); //move to target position with 2 different speeds
   //move5(); //move continuously with 2 different speeds
 
-  forward(204);
-  stop();
-  reverse(204);
-  stop();
+//  forward(204);
+//  stop();
+//  reverse(204);
+//  stop();
 
-  delay(10000);
+  moveCircle(6,-1);
+
+  delay(1000);
 }
 
 
@@ -186,6 +190,7 @@ void pivot(int direction) {
    runAtSpeedToPosition() is a written function that uses constant speed to achieve target positon for both steppers, no blocking
 */
 void spin(int direction) {
+  
 }
 
 /*
@@ -264,6 +269,42 @@ void stop() {
   INSERT DESCRIPTION HERE, what are the inputs, what does it do, functions used
 */
 void moveCircle(int diam, int dir) {
+   
+  int v = defaultRightWheelSpeed;
+  float r = diam/2;
+  float w = v/r;
+
+  float innerDis = (r-dleft)*PI*2;
+  float outerDis = (r+dright)*PI*2;
+  
+  int innersteps = stepsPerRotation*innerDis/(PI*wheelDiameter);
+  int outersteps = stepsPerRotation*outerDis/(PI*wheelDiameter);
+  
+  if (dir > 0){
+    int vinner = w*(r-dleft);
+    int vouter = w*(r+dright);
+    stepperLeft.setSpeed(vinner);
+    stepperRight.setSpeed(vouter);
+    stepperRight.move(outersteps);//move one full rotation forward relative to current position
+    stepperLeft.move(innersteps);//move one full rotation forward relative to current position
+  }else if(dir < 0){
+    int vinner = w*(r-dright);
+    int vouter = w*(r+dleft);
+    stepperRight.setSpeed(vinner);
+    stepperLeft.setSpeed(vouter);
+    stepperRight.move(innersteps);//move one full rotation forward relative to current position
+    stepperLeft.move(outersteps);//move one full rotation forward relative to current position
+    Serial.print(outersteps);
+    Serial.print("\t");
+    Serial.println(innersteps);
+  }
+
+  
+  
+  runAtSpeedToPosition(); //run both stepper to set position
+  runToStop();//run until the robot reaches the
+
+
 }
 
 /*
@@ -271,6 +312,8 @@ void moveCircle(int diam, int dir) {
   twice with 2 different direcitons to create a figure 8 with circles of the given diameter.
 */
 void moveFigure8(int diam) {
+  moveCircle(diam,1);
+  moveCircle(diam,-1);
 }
 
 
