@@ -141,6 +141,7 @@ void loop()
 
 
 
+
 /*This function, runToStop(), will run the robot until the target is achieved and
    then stop it
 */
@@ -303,8 +304,8 @@ void moveCircle(int diam, int dir) {
   float innerDis = (r-dleft)*PI*2;
   float outerDis = (r+dright)*PI*2;
   
-  int innersteps = stepsPerRotation*innerDis/(PI*wheelDiameter);
-  int outersteps = stepsPerRotation*outerDis/(PI*wheelDiameter);
+  int innersteps = stepsPerRotation*innerDis/(PI*wheelDiameter)*0.96;
+  int outersteps = stepsPerRotation*outerDis/(PI*wheelDiameter)*0.94;
   
   if (dir > 0){
     int vinner = w*(r-dleft);
