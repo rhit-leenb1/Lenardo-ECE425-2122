@@ -125,14 +125,18 @@ void loop()
   //move4(); //move to target position with 2 different speeds
   //move5(); //move continuously with 2 different speeds
 
-//  forward(204);
-//  stop();
-//  reverse(204);
-//  stop();
-
-  moveCircle(6,-1);
-
-  delay(1000);
+    forward(5);
+    delay(1000);
+    reverse(5);
+    delay(1000);
+    spin(-1);
+    delay(1000);
+    pivot(1);
+    delay(1000);
+    moveCircle(36,1);
+    delay(1000);
+    //figure8(36);
+    delay(1000);
 }
 
 
@@ -176,6 +180,19 @@ void runAtSpeed ( void ) {
   INSERT DESCRIPTION HERE, what are the inputs, what does it do, functions used
 */
 void pivot(int direction) {
+  int distance = PI*dleft*2;
+  int stepsToTake = stepsPerRotation*distance/(PI*wheelDiameter); //calculate how many steps to go to distance
+  int directionUnitV = direction / abs(direction);
+
+  if (direction > 0){
+    stepperRight.move(stepsToTake * directionUnitV);//move one full rotation forward relative to current position
+    stepperRight.setSpeed(defaultRightWheelSpeed * directionUnitV);//set right motor speed
+  }else{
+    stepperLeft.move(stepsToTake * directionUnitV);//move one full rotation forward relative to current position
+    stepperLeft.setSpeed(defaultLeftWheelSpeed * directionUnitV);//set left motor speed
+  }
+  runAtSpeedToPosition(); //run both stepper to set position
+  runToStop();//run until the robot reaches the  
 }
 
 /*
@@ -190,6 +207,7 @@ void pivot(int direction) {
    runAtSpeedToPosition() is a written function that uses constant speed to achieve target positon for both steppers, no blocking
 */
 void spin(int direction) {
+  int distance = PI*dleft;
   int stepsToTake = stepsPerRotation*distance/(PI*wheelDiameter); //calculate how many steps to go to distance
   int directionUnitV = direction / abs(direction);
   
@@ -291,26 +309,24 @@ void moveCircle(int diam, int dir) {
   if (dir > 0){
     int vinner = w*(r-dleft);
     int vouter = w*(r+dright);
-    stepperLeft.setSpeed(vinner);
-    stepperRight.setSpeed(vouter);
+    stepperLeft.setMaxSpeed(vinner);
+    stepperRight.setMaxSpeed(vouter);
     stepperRight.move(outersteps);//move one full rotation forward relative to current position
     stepperLeft.move(innersteps);//move one full rotation forward relative to current position
   }else if(dir < 0){
     int vinner = w*(r-dright);
     int vouter = w*(r+dleft);
-    stepperRight.setSpeed(vinner);
-    stepperLeft.setSpeed(vouter);
+    stepperRight.setMaxSpeed(vinner);
+    stepperLeft.setMaxSpeed(vouter);
     stepperRight.move(innersteps);//move one full rotation forward relative to current position
     stepperLeft.move(outersteps);//move one full rotation forward relative to current position
-    Serial.print(outersteps);
-    Serial.print("\t");
-    Serial.println(innersteps);
+
   }
 
   
   
-  runAtSpeedToPosition(); //run both stepper to set position
-  runToStop();//run until the robot reaches the
+  stepperLeft.runSpeedToPosition(); //run both stepper to set position
+  stepperRight.runSpeedToPosition();
 
 
 }
