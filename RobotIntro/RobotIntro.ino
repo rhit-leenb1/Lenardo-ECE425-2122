@@ -63,8 +63,8 @@ const int stepTime = 500; //delay time between high and low on step pin
 //define robot features
 const int stepsPerRotation = 800;               //800 steps make one full wheel rotation
 const float wheelDiameter = 3.375;                  //wheel diameter in inches
-const int defaultRightWheelSpeed = 100;         // default speed for the right Wheel (speeds has been tested from Lab1)
-const int defaultLeftWheelSpeed = 100;          // default speed for the left Wheel (speeds has been tested from Lab1)
+const int defaultRightWheelSpeed = 500;         // default speed for the right Wheel (speeds has been tested from Lab1)
+const int defaultLeftWheelSpeed = 500;          // default speed for the left Wheel (speeds has been tested from Lab1)
 const float dleft = 4.25;
 const float dright = 4.25;
 
@@ -125,14 +125,24 @@ void loop()
   //move4(); //move to target position with 2 different speeds
   //move5(); //move continuously with 2 different speeds
 
-//  forward(204);
+//  forward(4);
 //  stop();
 //  reverse(204);
 //  stop();
+//  pivot(2);
+//  spin(2);
+//  turn(2);
 
-//  moveCircle(6,-1);
+  moveCircle(36,1);
+  delay(5000);
+  moveFigure8(36);
 
+  //gotoangle(90);
+  //delay(1000);
+  //gotoangle(-90);
   delay(1000);
+  //gotogoal(-8,8);
+  //moveSquare(24);
 }
 
 
@@ -177,6 +187,25 @@ void runAtSpeed ( void ) {
   INSERT DESCRIPTION HERE, what are the inputs, what does it do, functions used
 */
 void pivot(int direction) {
+  int distance = PI*dleft;
+  
+  int stepsToTake = stepsPerRotation*distance/(PI*wheelDiameter);
+  int directionUnitV = direction / abs(direction);
+
+  if (directionUnitV>0){
+    stepperRight.move(stepsToTake * directionUnitV);
+    stepperRight.setSpeed(defaultRightWheelSpeed * directionUnitV);
+    runAtSpeedToPosition(); //run both stepper to set position
+    runToStop();//run until the robot reaches the  
+  }else if(directionUnitV<0){
+    stepperLeft.move(stepsToTake * directionUnitV);
+    stepperLeft.setSpeed(defaultRightWheelSpeed * directionUnitV);
+    runAtSpeedToPosition(); //run both stepper to set position
+    runToStop();//run until the robot reaches the  
+  }else{
+    stepperRight.stop();
+    stepperLeft.stop();
+  }
 }
 
 /*
@@ -191,6 +220,7 @@ void pivot(int direction) {
    runAtSpeedToPosition() is a written function that uses constant speed to achieve target positon for both steppers, no blocking
 */
 void spin(int direction) {
+  int distance = PI*dleft;
   
   int stepsToTake = stepsPerRotation*distance/(PI*wheelDiameter); //calculate how many steps to go to distance
   int directionUnitV = direction / abs(direction);
@@ -207,6 +237,31 @@ void spin(int direction) {
   INSERT DESCRIPTION HERE, what are the inputs, what does it do, functions used
 */
 void turn(int direction) {
+  int distance = PI*dleft;
+  
+  int stepsToTake = stepsPerRotation*distance/(PI*wheelDiameter); //calculate how many steps to go to distance
+  int directionUnitV = direction / abs(direction);
+
+  if (directionUnitV>0){
+    stepperRight.move(stepsToTake * directionUnitV);//move one full rotation forward relative to current position
+    stepperLeft.move(stepsToTake * directionUnitV*0.5);//move one full rotation forward relative to current position
+    stepperRight.setMaxSpeed(defaultRightWheelSpeed * directionUnitV);//set right motor speed
+    stepperLeft.setMaxSpeed(defaultLeftWheelSpeed * directionUnitV*0.5);//set left motor speed
+    runAtSpeedToPosition(); //run both stepper to set position
+    runToStop();//run until the robot reaches the  
+  }else if(directionUnitV<0){
+    stepperRight.move(stepsToTake * directionUnitV*0.5);//move one full rotation forward relative to current position
+    stepperLeft.move(stepsToTake * directionUnitV);//move one full rotation forward relative to current position
+    stepperRight.setMaxSpeed(defaultRightWheelSpeed * directionUnitV*0.5);//set right motor speed
+    stepperLeft.setMaxSpeed(defaultLeftWheelSpeed * directionUnitV);//set left motor speed
+    runAtSpeedToPosition(); //run both stepper to set position
+    runToStop();//run until the robot reaches the
+  }else{
+    stepperRight.stop();
+    stepperLeft.stop();
+  }
+
+  
 }
 
 
@@ -231,11 +286,12 @@ void turn(int direction) {
  */
 
 void forward(int distance) {
+  // inches
   int stepsToTake = stepsPerRotation*distance/(PI*wheelDiameter); //calculate how many steps to go to distance
   stepperRight.move(stepsToTake);//move one full rotation forward relative to current position
   stepperLeft.move(stepsToTake);//move one full rotation forward relative to current position
-  stepperRight.setSpeed(defaultRightWheelSpeed);//set right motor speed
-  stepperLeft.setSpeed(defaultLeftWheelSpeed);//set left motor speed
+  stepperRight.setMaxSpeed(defaultRightWheelSpeed*0.9012);//set right motor speed
+  stepperLeft.setMaxSpeed(defaultLeftWheelSpeed);//set left motor speed
   runAtSpeedToPosition(); //run both stepper to set position
   runToStop();//run until the robot reaches the
 }
@@ -279,34 +335,32 @@ void stop() {
   INSERT DESCRIPTION HERE, what are the inputs, what does it do, functions used
 */
 void moveCircle(int diam, int dir) {
+  //inches
    
   int v = defaultRightWheelSpeed;
-  float r = diam/2;
+  float r = diam/2*1.05;
   float w = v/r;
 
-  float innerDis = (r-dleft)*PI*2;
-  float outerDis = (r+dright)*PI*2;
+  float innerDis = (r-dleft)*PI*2*1.01;
+  float outerDis = (r+dright)*PI*2*1.01;
   
-  int innersteps = stepsPerRotation*innerDis/(PI*wheelDiameter)*0.96;
-  int outersteps = stepsPerRotation*outerDis/(PI*wheelDiameter)*0.94;
+  float innersteps = stepsPerRotation*innerDis/(PI*wheelDiameter);
+  float outersteps = stepsPerRotation*outerDis/(PI*wheelDiameter);
   
   if (dir > 0){
     int vinner = w*(r-dleft);
     int vouter = w*(r+dright);
-    stepperLeft.setSpeed(vinner);
-    stepperRight.setSpeed(vouter);
-    stepperRight.move(outersteps);//move one full rotation forward relative to current position
-    stepperLeft.move(innersteps);//move one full rotation forward relative to current position
+    stepperLeft.setMaxSpeed(vinner*0.96);
+    stepperRight.setMaxSpeed(vouter*0.94);
+    stepperRight.move(outersteps*0.96);//move one full rotation forward relative to current position
+    stepperLeft.move(innersteps*0.94);//move one full rotation forward relative to current position
   }else if(dir < 0){
     int vinner = w*(r-dright);
     int vouter = w*(r+dleft);
-    stepperRight.setSpeed(vinner);
-    stepperLeft.setSpeed(vouter);
-    stepperRight.move(innersteps);//move one full rotation forward relative to current position
-    stepperLeft.move(outersteps);//move one full rotation forward relative to current position
-    Serial.print(outersteps);
-    Serial.print("\t");
-    Serial.println(innersteps);
+    stepperRight.setMaxSpeed(vinner*0.94);
+    stepperLeft.setMaxSpeed(vouter*0.96);
+    stepperRight.move(innersteps*0.96);//move one full rotation forward relative to current position
+    stepperLeft.move(outersteps*0.94);//move one full rotation forward relative to current position
   }
 
   
@@ -326,6 +380,48 @@ void moveFigure8(int diam) {
   moveCircle(diam,-1);
 }
 
+void gotoangle(int angle){
+  long stepsToTake = angle*10;
+  
+  if (angle > 0){
+    stepperRight.move(stepsToTake*1.05);
+    stepperRight.setMaxSpeed(defaultRightWheelSpeed );
+    runAtSpeedToPosition(); //run both stepper to set position
+    runToStop();//run until the robot reaches the  
+  }else if (angle < 0){
+    stepperLeft.move(-stepsToTake*1.25);
+    stepperLeft.setMaxSpeed(defaultRightWheelSpeed);
+    runAtSpeedToPosition(); //run both stepper to set position
+    runToStop();//run until the robot reaches the  
+  }else{
+    stepperRight.stop();
+    stepperLeft.stop();
+  }
+}
+
+void gotogoal(int x, int y){
+  float theta = atan2(y,x);
+  int l = sqrt(sq(x)+sq(y));
+
+  gotoangle(theta*180/PI);
+  forward(l);
+
+}
+
+void moveSquare(int side){
+  forward(side);
+  delay(500);
+  gotoangle(90);
+  forward(side);
+  delay(500);
+  gotoangle(90);
+  forward(side);
+  delay(500);
+  gotoangle(90);
+  forward(side);
+  delay(500);
+  gotoangle(90);
+}
 
 
 
