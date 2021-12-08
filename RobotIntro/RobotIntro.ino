@@ -132,16 +132,15 @@ void loop()
 //  pivot(2);
 //  spin(2);
 //  turn(2);
-
-  //moveCircle(36,1);
-  //delay(5000);
-  //moveFigure8(36);
-
-  //gotoangle(90);
-  //delay(1000);
-  //gotoangle(-90);
   delay(5000);
-  //gotogoal(-8,8);
+  moveCircle(36,1);
+  delay(5000);
+  moveFigure8(36);
+  delay(5000);
+  gotoangle(-90);
+  delay(5000);
+  gotogoal(-8,8);
+  delay(5000);
   moveSquare(24);
   delay(1000);
 }
@@ -337,6 +336,9 @@ void stop() {
 */
 void moveCircle(int diam, int dir) {
   //inches
+  digitalWrite(redLED, HIGH);//turn on red LED
+  digitalWrite(grnLED, LOW);//turn off green LED
+  digitalWrite(ylwLED, LOW);//turn off yellow LED
    
   int v = defaultRightWheelSpeed;
   float r = diam/2;
@@ -377,11 +379,17 @@ void moveCircle(int diam, int dir) {
   twice with 2 different direcitons to create a figure 8 with circles of the given diameter.
 */
 void moveFigure8(int diam) {
+  digitalWrite(redLED, HIGH);//turn on red LED
+  digitalWrite(grnLED, LOW);//turn off green LED
+  digitalWrite(ylwLED, HIGH);//turn on yellow LED
   moveCircle(diam,1);
   moveCircle(diam,-1);
 }
 
 void gotoangle(int angle){
+  digitalWrite(redLED, LOW);//turn off red LED
+  digitalWrite(grnLED, HIGH);//turn on green LED
+  digitalWrite(ylwLED, LOW);//turn off yellow LED
   long stepsToTake = angle*10;
   
   if (angle > 0){
@@ -401,6 +409,9 @@ void gotoangle(int angle){
 }
 
 void gotogoal(int x, int y){
+  digitalWrite(redLED, LOW);//turn off red LED
+  digitalWrite(grnLED, HIGH);//turn on green LED
+  digitalWrite(ylwLED, HIGH);//turn on yellow LED
   float theta = atan2(y,x);
   int l = sqrt(sq(x)+sq(y));
 
@@ -410,6 +421,9 @@ void gotogoal(int x, int y){
 }
 
 void moveSquare(int side){
+  digitalWrite(redLED, HIGH);//turn on red LED
+  digitalWrite(grnLED, HIGH);//turn on green LED
+  digitalWrite(ylwLED, HIGH);//turn on yellow LED
   forward(side);
   delay(500);
   gotoangle(90);
