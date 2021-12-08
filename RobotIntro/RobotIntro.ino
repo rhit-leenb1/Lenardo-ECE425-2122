@@ -133,16 +133,17 @@ void loop()
 //  spin(2);
 //  turn(2);
 
-  moveCircle(36,1);
-  delay(5000);
-  moveFigure8(36);
+  //moveCircle(36,1);
+  //delay(5000);
+  //moveFigure8(36);
 
   //gotoangle(90);
   //delay(1000);
   //gotoangle(-90);
-  delay(1000);
+  delay(5000);
   //gotogoal(-8,8);
-  //moveSquare(24);
+  moveSquare(24);
+  delay(1000);
 }
 
 
@@ -344,8 +345,8 @@ void moveCircle(int diam, int dir) {
   float innerDis = (r-dleft)*PI*2;
   float outerDis = (r+dright)*PI*2;
   
-  float innersteps = stepsPerRotation*innerDis/(PI*wheelDiameter)*.92;
-  float outersteps = stepsPerRotation*outerDis/(PI*wheelDiameter)*.92;
+  float innersteps = stepsPerRotation*innerDis/(PI*wheelDiameter)*.87;
+  float outersteps = stepsPerRotation*outerDis/(PI*wheelDiameter)*.87;
   
   if (dir > 0){
     int vinner = w*(r-dleft);
@@ -359,7 +360,7 @@ void moveCircle(int diam, int dir) {
     int vouter = w*(r+dleft);
     stepperRight.setMaxSpeed(vinner*0.96);
     stepperLeft.setMaxSpeed(vouter);
-    stepperRight.move(innersteps*1.1);//move one full rotation forward relative to current position
+    stepperRight.move(innersteps*1.07);//move one full rotation forward relative to current position
     stepperLeft.move(outersteps*1.1);//move one full rotation forward relative to current position
   }
 
