@@ -338,29 +338,29 @@ void moveCircle(int diam, int dir) {
   //inches
    
   int v = defaultRightWheelSpeed;
-  float r = diam/2*1.05;
+  float r = diam/2;
   float w = v/r;
 
-  float innerDis = (r-dleft)*PI*2*1.01;
-  float outerDis = (r+dright)*PI*2*1.01;
+  float innerDis = (r-dleft)*PI*2;
+  float outerDis = (r+dright)*PI*2;
   
-  float innersteps = stepsPerRotation*innerDis/(PI*wheelDiameter);
-  float outersteps = stepsPerRotation*outerDis/(PI*wheelDiameter);
+  float innersteps = stepsPerRotation*innerDis/(PI*wheelDiameter)*.92;
+  float outersteps = stepsPerRotation*outerDis/(PI*wheelDiameter)*.92;
   
   if (dir > 0){
     int vinner = w*(r-dleft);
     int vouter = w*(r+dright);
     stepperLeft.setMaxSpeed(vinner*0.96);
-    stepperRight.setMaxSpeed(vouter*0.94);
-    stepperRight.move(outersteps*0.96);//move one full rotation forward relative to current position
-    stepperLeft.move(innersteps*0.94);//move one full rotation forward relative to current position
+    stepperRight.setMaxSpeed(vouter);
+    stepperRight.move(outersteps);//move one full rotation forward relative to current position
+    stepperLeft.move(innersteps*0.97);//move one full rotation forward relative to current position
   }else if(dir < 0){
     int vinner = w*(r-dright);
     int vouter = w*(r+dleft);
-    stepperRight.setMaxSpeed(vinner*0.94);
-    stepperLeft.setMaxSpeed(vouter*0.96);
-    stepperRight.move(innersteps*0.96);//move one full rotation forward relative to current position
-    stepperLeft.move(outersteps*0.94);//move one full rotation forward relative to current position
+    stepperRight.setMaxSpeed(vinner*0.96);
+    stepperLeft.setMaxSpeed(vouter);
+    stepperRight.move(innersteps*1.1);//move one full rotation forward relative to current position
+    stepperLeft.move(outersteps*1.1);//move one full rotation forward relative to current position
   }
 
   
