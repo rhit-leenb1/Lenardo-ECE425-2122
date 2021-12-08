@@ -132,17 +132,39 @@ void loop()
 //  pivot(2);
 //  spin(2);
 //  turn(2);
+//  delay(5000);
+//  digitalWrite(redLED, HIGH);//turn on red LED
+//  digitalWrite(grnLED, LOW);//turn off green LED
+//  digitalWrite(ylwLED, LOW);//turn off yellow LED
+//  moveCircle(36,1);
+//  digitalWrite(redLED, HIGH);//turn on red LED
+//  digitalWrite(grnLED, LOW);//turn off green LED
+//  digitalWrite(ylwLED, HIGH);//turn on yellow LED
+//  delay(5000);
+//  
+//  moveFigure8(36);
+//  delay(5000);
+//  digitalWrite(redLED, LOW);//turn off red LED
+//  digitalWrite(grnLED, HIGH);//turn on green LED
+//  digitalWrite(ylwLED, LOW);//turn off yellow LED
+//  gotoangle(-60);
+//
+//  delay(5000);
+//  gotoangle(135);
   delay(5000);
-  moveCircle(36,1);
-  delay(5000);
-  moveFigure8(36);
-  delay(5000);
-  gotoangle(-90);
-  delay(5000);
-  gotogoal(-8,8);
-  delay(5000);
-  moveSquare(24);
+  digitalWrite(redLED, LOW);//turn off red LED
+  digitalWrite(grnLED, HIGH);//turn on green LED
+  digitalWrite(ylwLED, HIGH);//turn on yellow LED
+  gotogoal(-24,36);
+  delay(7000);
+  gotogoal(0,48);
+  delay(7000);
+  digitalWrite(redLED, HIGH);//turn on red LED
+  digitalWrite(grnLED, HIGH);//turn on green LED
+  digitalWrite(ylwLED, HIGH);//turn on yellow LED
+  moveSquare(48);
   delay(1000);
+//  forward(41);
 }
 
 
@@ -287,6 +309,11 @@ void turn(int direction) {
 
 void forward(int distance) {
   // inches
+  if (distance > 40){
+    forward(40);
+    distance = distance - 40;
+  }
+  
   int stepsToTake = stepsPerRotation*distance/(PI*wheelDiameter); //calculate how many steps to go to distance
   stepperRight.move(stepsToTake);//move one full rotation forward relative to current position
   stepperLeft.move(stepsToTake);//move one full rotation forward relative to current position
@@ -336,9 +363,7 @@ void stop() {
 */
 void moveCircle(int diam, int dir) {
   //inches
-  digitalWrite(redLED, HIGH);//turn on red LED
-  digitalWrite(grnLED, LOW);//turn off green LED
-  digitalWrite(ylwLED, LOW);//turn off yellow LED
+  
    
   int v = defaultRightWheelSpeed;
   float r = diam/2;
@@ -379,18 +404,15 @@ void moveCircle(int diam, int dir) {
   twice with 2 different direcitons to create a figure 8 with circles of the given diameter.
 */
 void moveFigure8(int diam) {
-  digitalWrite(redLED, HIGH);//turn on red LED
-  digitalWrite(grnLED, LOW);//turn off green LED
-  digitalWrite(ylwLED, HIGH);//turn on yellow LED
+  
   moveCircle(diam,1);
   moveCircle(diam,-1);
 }
 
 void gotoangle(int angle){
-  digitalWrite(redLED, LOW);//turn off red LED
-  digitalWrite(grnLED, HIGH);//turn on green LED
-  digitalWrite(ylwLED, LOW);//turn off yellow LED
-  long stepsToTake = angle*10;
+  Serial.println(angle);
+  
+  long stepsToTake = angle*9.4;//10;
   
   if (angle > 0){
     stepperRight.move(stepsToTake*1.05);
@@ -412,10 +434,11 @@ void gotogoal(int x, int y){
   digitalWrite(redLED, LOW);//turn off red LED
   digitalWrite(grnLED, HIGH);//turn on green LED
   digitalWrite(ylwLED, HIGH);//turn on yellow LED
-  float theta = atan2(y,x);
+  float theta = atan2(y,x)*180/PI;
   int l = sqrt(sq(x)+sq(y));
-
-  gotoangle(theta*180/PI);
+  Serial.println(l);
+  Serial.println(theta);
+  gotoangle(theta);
   forward(l);
 
 }
