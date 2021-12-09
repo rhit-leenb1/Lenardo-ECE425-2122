@@ -76,6 +76,13 @@ volatile long encoder[2] = {0, 0};  //interrupt variable to hold number of encod
 int lastSpeed[2] = {0, 0};          //variable to hold encoder speed (left, right)
 int accumTicks[2] = {0, 0};         //variable to hold accumulated ticks since last reset
 
+const int stepsPerRotation = 800;               //800 steps make one full wheel rotation
+const float wheelDiameter = 3.375;                  //wheel diameter in inches
+const int defaultRightWheelSpeed = 500;         // default speed for the right Wheel (speeds has been tested from Lab1)
+const int defaultLeftWheelSpeed = 500;          // default speed for the left Wheel (speeds has been tested from Lab1)
+const float dleft = 4.25;
+const float dright = 4.25;
+
 AccelStepper stepperRight(AccelStepper::DRIVER, rtStepPin, rtDirPin);//create instance of right stepper motor object (2 driver pins, low to high transition step pin 52, direction input pin 53 (high means forward)
 AccelStepper stepperLeft(AccelStepper::DRIVER, ltStepPin, ltDirPin);//create instance of left stepper motor object (2 driver pins, step pin 50, direction input pin 51)
 MultiStepper steppers;//create instance to control multiple steppers at the same time
@@ -105,7 +112,8 @@ void setup() {
 
 //the loop funciton runs continuously to move the robot wheels and count encoder ticks
 void loop() {
-  move1(FWD, qua_rot);            //move the robot wheels
+  //move1(FWD, qua_rot);            //move the robot wheels
+  goToAngle(90);
   print_data();                   //prints encoder data
   delay(wait_time);               //wait to move robot
 }
@@ -168,7 +176,24 @@ void move1(int dir, int amt) {
 /*
   INSERT DESCRIPTION HERE, what are the inputs, what does it do, functions used
 */
-void goToAngle(int Angle) {
+void goToAngle(int angle) {
+  
+  long stepsToTake = angle*9.4;//10;
+  
+  if (angle > 0){
+    stepperRight.move(stepsToTake*1.05);
+    stepperRight.setMaxSpeed(defaultRightWheelSpeed );
+    runAtSpeedToPosition(); //run both stepper to set position
+    runToStop();//run until the robot reaches the  
+  }else if (angle < 0){
+    stepperLeft.move(-stepsToTake*1.25);
+    stepperLeft.setMaxSpeed(defaultRightWheelSpeed);
+    runAtSpeedToPosition(); //run both stepper to set position
+    runToStop();//run until the robot reaches the  
+  }else{
+    stepperRight.stop();
+    stepperLeft.stop();
+  }
 }
 
 /*
@@ -181,4 +206,30 @@ void goToGoal(int x, int y) {
   INSERT DESCRIPTION HERE, what are the inputs, what does it do, functions used
 */
 void moveSquare(int side) {
+}
+
+void runToStop ( void ) {
+  int runNow = 1;
+  int rightStopped = 0;
+  int leftStopped = 0;
+
+  while (runNow) {
+    if (!stepperRight.run()) {
+      rightStopped = 1;
+      stepperRight.stop();//stop right motor
+    }
+    if (!stepperLeft.run()) {
+      leftStopped = 1;
+      stepperLeft.stop();//stop ledt motor
+    }
+    if (rightStopped && leftStopped) {
+      runNow = 0;
+    }
+  }
+}
+
+/*function to run both wheels to a position at speed*/
+void runAtSpeedToPosition() {
+  stepperRight.runSpeedToPosition();
+  stepperLeft.runSpeedToPosition();
 }

@@ -123,7 +123,7 @@ void loop()
  //move2();//call move back and forth function with AccelStepper library functions
  // move3();//call move back and forth function with MultiStepper library functions
   //move4(); //move to target position with 2 different speeds
-  //move5(); //move continuously with 2 different speeds
+//  move5(); //move continuously with 2 different speeds
 
 //  forward(4);
 //  stop();
