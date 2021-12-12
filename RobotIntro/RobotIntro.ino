@@ -336,7 +336,7 @@ void forward(int distance) {
  * Refer to forward() for more details
 */
 void reverse(int distance) {
-  forward(-distance);
+  forward(-distance); // call forward to move negative distance
 }
 
 
@@ -360,7 +360,7 @@ void stop() {
 
 
 /*
-  INSERT DESCRIPTION HERE, what are the inputs, what does it do, functions used
+  move circle is a function which make robot to draw a circle with certain distance. The inputs are diameter in inches and direction. Positive number for direction input means turn left and negative means turn right
 */
 void moveCircle(int diam, int dir) {
   //inches
@@ -410,6 +410,10 @@ void moveFigure8(int diam) {
   moveCircle(diam,-1); //call move circle to finish second circle
 }
 
+
+/*
+ The gotoangle() function takes the angle in degrees as the input. It will move one side of wheel to turn the robot to the assigned direction. Positive input means turn left and negative means turn right.
+ */
 void gotoangle(int angle){
   //Serial.println(angle);
   
@@ -430,6 +434,11 @@ void gotoangle(int angle){
     stepperLeft.stop();
   }
 }
+/*
+ The gotoangle() function takes the x and y distance in inches as the input. If robot go forward, it will move on x direction. And y direction is prependicular to the x direction.
+ In this function, it will call gotoangle() to turn and forward() to move to target.
+ */
+
 
 void gotogoal(int x, int y){
   digitalWrite(redLED, LOW);//turn off red LED
@@ -443,6 +452,10 @@ void gotogoal(int x, int y){
   forward(l); //call forward to move certain distance
 
 }
+
+/*
+ *The moveSquare() function takes the side length of square in inches as the input. The function will call forward() to draw the side and gotoangle(90) to create the angle.
+ */
 
 void moveSquare(int side){
   digitalWrite(redLED, HIGH);//turn on red LED
