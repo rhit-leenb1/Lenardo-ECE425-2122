@@ -126,43 +126,43 @@ void loop()
 //  move5(); //move continuously with 2 different speeds
 
 //  forward(4);//call forward function
-//  stop();
-//  reverse(204);
-//  stop();
-//  pivot(2);
-  spin(2);
-//  turn(2);
+//  stop();//call stop function
+//  reverse(204); //call reverse function
+//  stop();//call stop function
+//  pivot(2);//call pivot function
+  spin(2);//call spin function
+//  turn(2);//call turn function
   delay(5000);
 //  digitalWrite(redLED, HIGH);//turn on red LED
 //  digitalWrite(grnLED, LOW);//turn off green LED
 //  digitalWrite(ylwLED, LOW);//turn off yellow LED
-//  moveCircle(36,1);
+//  moveCircle(36,1); //call move Circle function
 //  digitalWrite(redLED, HIGH);//turn on red LED
 //  digitalWrite(grnLED, LOW);//turn off green LED
 //  digitalWrite(ylwLED, HIGH);//turn on yellow LED
 //  delay(5000);
 //  
-//  moveFigure8(36);
-//  delay(5000);
+//  moveFigure8(36); //call move Figure 8 function
+//  delay(5000); 
 //  digitalWrite(redLED, LOW);//turn off red LED
 //  digitalWrite(grnLED, HIGH);//turn on green LED
 //  digitalWrite(ylwLED, LOW);//turn off yellow LED
-//  gotoangle(-60);
+//  gotoangle(-60); //call go to angle function
 //
-//  delay(5000);
-//  gotoangle(135);
+//  delay(5000); 
+//  gotoangle(135); //call go to angle function
 //  delay(5000);
 //  digitalWrite(redLED, LOW);//turn off red LED
 //  digitalWrite(grnLED, HIGH);//turn on green LED
 //  digitalWrite(ylwLED, HIGH);//turn on yellow LED
-//  gotogoal(-24,36);
-//  delay(7000);
-//  gotogoal(0,48);
+//  gotogoal(-24,36); //call go to goal function
+//  delay(7000); 
+//  gotogoal(0,48); //call go to goal function
 //  delay(7000);
 //  digitalWrite(redLED, HIGH);//turn on red LED
 //  digitalWrite(grnLED, HIGH);//turn on green LED
 //  digitalWrite(ylwLED, HIGH);//turn on yellow LED
-//  moveSquare(48);
+//  moveSquare(48); //call move square function
 //  delay(1000);
 //  forward(41);
 }
@@ -252,7 +252,7 @@ void spin(int direction) {
   stepperRight.setMaxSpeed(defaultRightWheelSpeed * directionUnitV*0.5);//set right motor speed
   stepperLeft.setMaxSpeed(-defaultLeftWheelSpeed * directionUnitV*0.5);//set left motor speed
   runAtSpeedToPosition(); //run both stepper to set position
-  runToStop();//run until the robot reaches the  
+  runToStop();//run until the robot reaches the target
 }
 
 /*
@@ -277,7 +277,7 @@ void turn(int direction) {
     stepperRight.setMaxSpeed(defaultRightWheelSpeed * directionUnitV*0.5);//set right motor speed
     stepperLeft.setMaxSpeed(defaultLeftWheelSpeed * directionUnitV);//set left motor speed
     runAtSpeedToPosition(); //run both stepper to set position
-    runToStop();//run until the robot reaches the
+    runToStop();//run until the robot reaches the target
   }else{
     stepperRight.stop();
     stepperLeft.stop();
@@ -313,6 +313,7 @@ void forward(int distance) {
     forward(40);
     distance = distance - 40;
   }
+  // 40 inches is a limit for our robot. If we have more than 40 inches distance, the robot will only run 40 inches less than we expected.
   
   int stepsToTake = stepsPerRotation*distance/(PI*wheelDiameter); //calculate how many steps to go to distance
   stepperRight.move(stepsToTake);//move one full rotation forward relative to current position
@@ -320,7 +321,7 @@ void forward(int distance) {
   stepperRight.setMaxSpeed(defaultRightWheelSpeed*0.9012);//set right motor speed
   stepperLeft.setMaxSpeed(defaultLeftWheelSpeed);//set left motor speed
   runAtSpeedToPosition(); //run both stepper to set position
-  runToStop();//run until the robot reaches the
+  runToStop();//run until the robot reaches the target
 }
 
 
@@ -365,30 +366,30 @@ void moveCircle(int diam, int dir) {
   //inches
   
    
-  int v = defaultRightWheelSpeed;
-  float r = diam/2;
-  float w = v/r;
+  int v = defaultRightWheelSpeed; // set base speed
+  float r = diam/2; // find radius
+  float w = v/r; //find angular velocity
 
-  float innerDis = (r-dleft)*PI*2;
-  float outerDis = (r+dright)*PI*2;
+  float innerDis = (r-dleft)*PI*2; //find inner wheel moving distance
+  float outerDis = (r+dright)*PI*2; //find outer wheel moving distance
   
-  float innersteps = stepsPerRotation*innerDis/(PI*wheelDiameter)*.87;
-  float outersteps = stepsPerRotation*outerDis/(PI*wheelDiameter)*.87;
+  float innersteps = stepsPerRotation*innerDis/(PI*wheelDiameter)*.87; //find inner wheel moving steps
+  float outersteps = stepsPerRotation*outerDis/(PI*wheelDiameter)*.87; //find outer wheel moving steps
   
   if (dir > 0){
-    int vinner = w*(r-dleft);
-    int vouter = w*(r+dright);
-    stepperLeft.setMaxSpeed(vinner*0.96);
-    stepperRight.setMaxSpeed(vouter);
-    stepperRight.move(outersteps);//move one full rotation forward relative to current position
-    stepperLeft.move(innersteps*0.97);//move one full rotation forward relative to current position
+    int vinner = w*(r-dleft); //find inner wheel moving speed
+    int vouter = w*(r+dright); //find outer wheel moving speed
+    stepperLeft.setMaxSpeed(vinner*0.96); //set speed (inner wheels spins faster than expected)
+    stepperRight.setMaxSpeed(vouter); //set speed
+    stepperRight.move(outersteps);//move to set steps
+    stepperLeft.move(innersteps*0.97);//move to set steps (dicreased distance)
   }else if(dir < 0){
     int vinner = w*(r-dright);
     int vouter = w*(r+dleft);
     stepperRight.setMaxSpeed(vinner*0.96);
     stepperLeft.setMaxSpeed(vouter);
-    stepperRight.move(innersteps*1.07);//move one full rotation forward relative to current position
-    stepperLeft.move(outersteps*1.1);//move one full rotation forward relative to current position
+    stepperRight.move(innersteps*1.07);//move to set steps (small diameter creates more moving errors)
+    stepperLeft.move(outersteps*1.1);//move to set steps (small diameter creates more moving errors)
   }
 
   
@@ -405,25 +406,25 @@ void moveCircle(int diam, int dir) {
 */
 void moveFigure8(int diam) {
   
-  moveCircle(diam,1);
-  moveCircle(diam,-1);
+  moveCircle(diam,1); //call move circle to finish first circle
+  moveCircle(diam,-1); //call move circle to finish second circle
 }
 
 void gotoangle(int angle){
-  Serial.println(angle);
+  //Serial.println(angle);
   
-  long stepsToTake = angle*9.4;//10;
+  long stepsToTake = angle*9.4;//calculate steps to reach the angle
   
   if (angle > 0){
-    stepperRight.move(stepsToTake*1.05);
+    stepperRight.move(stepsToTake*1.05);// set steps(right wheel require more distance to achieve right angle)
     stepperRight.setMaxSpeed(defaultRightWheelSpeed );
     runAtSpeedToPosition(); //run both stepper to set position
-    runToStop();//run until the robot reaches the  
+    runToStop();//run until the robot reaches the target
   }else if (angle < 0){
-    stepperLeft.move(-stepsToTake*1.25);
+    stepperLeft.move(-stepsToTake*1.25); // set steps(left wheel require more distance to achieve right angle)
     stepperLeft.setMaxSpeed(defaultRightWheelSpeed);
     runAtSpeedToPosition(); //run both stepper to set position
-    runToStop();//run until the robot reaches the  
+    runToStop();//run until the robot reaches the target
   }else{
     stepperRight.stop();
     stepperLeft.stop();
@@ -434,12 +435,12 @@ void gotogoal(int x, int y){
   digitalWrite(redLED, LOW);//turn off red LED
   digitalWrite(grnLED, HIGH);//turn on green LED
   digitalWrite(ylwLED, HIGH);//turn on yellow LED
-  float theta = atan2(y,x)*180/PI;
-  int l = sqrt(sq(x)+sq(y));
-  Serial.println(l);
-  Serial.println(theta);
-  gotoangle(theta);
-  forward(l);
+  float theta = atan2(y,x)*180/PI; //calculate angle
+  int l = sqrt(sq(x)+sq(y)); //calculate distance
+  //Serial.println(l);
+  //Serial.println(theta);
+  gotoangle(theta); //call go to angle to point to final desination
+  forward(l); //call forward to move certain distance
 
 }
 
@@ -447,9 +448,9 @@ void moveSquare(int side){
   digitalWrite(redLED, HIGH);//turn on red LED
   digitalWrite(grnLED, HIGH);//turn on green LED
   digitalWrite(ylwLED, HIGH);//turn on yellow LED
-  forward(side);
+  forward(side); //call forward to draw the side (repeat 4 times)
   delay(500);
-  gotoangle(90);
+  gotoangle(90);// call go to angle to move 90 degrees (repeat 4 times)
   forward(side);
   delay(500);
   gotoangle(90);
