@@ -125,14 +125,14 @@ void loop()
   //move4(); //move to target position with 2 different speeds
 //  move5(); //move continuously with 2 different speeds
 
-//  forward(4);
+//  forward(4);//call forward function
 //  stop();
 //  reverse(204);
 //  stop();
 //  pivot(2);
-//  spin(2);
+  spin(2);
 //  turn(2);
-//  delay(5000);
+  delay(5000);
 //  digitalWrite(redLED, HIGH);//turn on red LED
 //  digitalWrite(grnLED, LOW);//turn off green LED
 //  digitalWrite(ylwLED, LOW);//turn off yellow LED
@@ -151,19 +151,19 @@ void loop()
 //
 //  delay(5000);
 //  gotoangle(135);
-  delay(5000);
-  digitalWrite(redLED, LOW);//turn off red LED
-  digitalWrite(grnLED, HIGH);//turn on green LED
-  digitalWrite(ylwLED, HIGH);//turn on yellow LED
-  gotogoal(-24,36);
-  delay(7000);
-  gotogoal(0,48);
-  delay(7000);
-  digitalWrite(redLED, HIGH);//turn on red LED
-  digitalWrite(grnLED, HIGH);//turn on green LED
-  digitalWrite(ylwLED, HIGH);//turn on yellow LED
-  moveSquare(48);
-  delay(1000);
+//  delay(5000);
+//  digitalWrite(redLED, LOW);//turn off red LED
+//  digitalWrite(grnLED, HIGH);//turn on green LED
+//  digitalWrite(ylwLED, HIGH);//turn on yellow LED
+//  gotogoal(-24,36);
+//  delay(7000);
+//  gotogoal(0,48);
+//  delay(7000);
+//  digitalWrite(redLED, HIGH);//turn on red LED
+//  digitalWrite(grnLED, HIGH);//turn on green LED
+//  digitalWrite(ylwLED, HIGH);//turn on yellow LED
+//  moveSquare(48);
+//  delay(1000);
 //  forward(41);
 }
 
@@ -244,13 +244,13 @@ void pivot(int direction) {
 void spin(int direction) {
   int distance = PI*dleft;
   
-  int stepsToTake = stepsPerRotation*distance/(PI*wheelDiameter); //calculate how many steps to go to distance
+  int stepsToTake = stepsPerRotation*distance*0.5/(PI*wheelDiameter); //calculate how many steps to go to distance
   int directionUnitV = direction / abs(direction);
   
   stepperRight.move(stepsToTake * directionUnitV);//move one full rotation forward relative to current position
   stepperLeft.move(-stepsToTake * directionUnitV);//move one full rotation forward relative to current position
-  stepperRight.setSpeed(defaultRightWheelSpeed * directionUnitV);//set right motor speed
-  stepperLeft.setSpeed(-defaultLeftWheelSpeed * directionUnitV);//set left motor speed
+  stepperRight.setMaxSpeed(defaultRightWheelSpeed * directionUnitV*0.5);//set right motor speed
+  stepperLeft.setMaxSpeed(-defaultLeftWheelSpeed * directionUnitV*0.5);//set left motor speed
   runAtSpeedToPosition(); //run both stepper to set position
   runToStop();//run until the robot reaches the  
 }

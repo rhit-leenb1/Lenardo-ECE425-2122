@@ -112,8 +112,8 @@ void setup() {
 
 //the loop funciton runs continuously to move the robot wheels and count encoder ticks
 void loop() {
-  //move1(FWD, qua_rot);            //move the robot wheels
-  goToAngle(90);
+  move1(FWD, two_rot);            //move the robot wheels
+  //goToAngle(90);
   print_data();                   //prints encoder data
   delay(wait_time);               //wait to move robot
 }
