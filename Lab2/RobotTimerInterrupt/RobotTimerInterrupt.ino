@@ -269,6 +269,9 @@ void updateIR() {
   irRearAvg = analogRead(irRear);
   irLeftAvg = analogRead(irLeft);
   irRightAvg = analogRead(irRight);
+
+  irFrontAvg = 899.36*pow(irFrontAvg,-0.92);
+  
   //  print IR data
       Serial.println("frontIR\tbackIR\tleftIR\trightIR");
       Serial.print(irFrontAvg); Serial.print("\t");
