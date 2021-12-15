@@ -52,23 +52,16 @@ AccelStepper stepperLeft(AccelStepper::DRIVER, ltStepPin, ltDirPin);//create ins
 MultiStepper steppers;//create instance to control multiple steppers at the same time
 
 //define IR sensor connections
-#define irFront A1    //front IR analog pin
-#define irRear A2    //back IR analog pin
-#define irRight A3   //right IR analog pin
-#define irLeft A0   //left IR analog pin
-
-//#define irFront A8    //front IR analog pin
-//#define irRear A9    //back IR analog pin
-//#define irRight A10   //right IR analog pin
-//#define irLeft A11   //left IR analog pin
+#define irFront A8    //front IR analog pin
+#define irRear A9    //back IR analog pin
+#define irRight A7   //right IR analog pin
+#define irLeft A6   //left IR analog pin
 #define button A15    //pushbutton 
 
 ///////////// NEW SONAR CLASSES FOR TIMER 2 INTERRUPT/////////////////
 //define sonar sensor connections
 #define snrLeft   A1   //front left sonar 
 #define snrRight  A2  //front right sonar 
-//#define snrLeft   A1   //front left sonar 
-//#define snrRight  A2  //front right sonar 
 #define SONAR_NUM     2         // Number of sensors.
 #define MAX_DISTANCE 200        // Maximum distance (in cm) to ping.
 #define PING_INTERVAL 125        // Milliseconds between sensor pings (29ms is about the min to avoid cross-sensor echo).
@@ -105,11 +98,11 @@ NewPing sonar[SONAR_NUM] = {     // Sensor object array.
 #define minThresh   0   // The sonar minimum threshold to filter out noise
 #define stopThresh  150 // If the robot has been stopped for this threshold move
 
-const int irListSize = 20;
-movingAvg irFrontList(20);  //variable to holds list of last front IR reading
-movingAvg irLeftList(20);   //variable to holds list of last left IR reading
-movingAvg irRearList(20);   //variable to holds list of last rear IR reading
-movingAvg irRightList(20);   //variable to holds list of last right IR reading
+const int irListSize = 10;
+movingAvg irFrontList(irListSize);  //variable to holds list of last front IR reading
+movingAvg irLeftList(irListSize);   //variable to holds list of last left IR reading
+movingAvg irRearList(irListSize);   //variable to holds list of last rear IR reading
+movingAvg irRightList(irListSize);   //variable to holds list of last right IR reading
 
 int irFrontAvg;  //variable to hold average of current front IR reading
 int irLeftAvg;   //variable to hold average of current left IR reading
@@ -120,7 +113,7 @@ int srRightAvg;  //variable to hold average or right sonar current reading
 
 #define baud_rate     9600  //set serial communication baud rate
 #define TIME          500   //pause time
-#define timer_int     1250 //timer interrupt interval in microseconds (range 1 us to 8.3 s)
+#define timer_int     125000 //timer interrupt interval in microseconds (range 1 us to 8.3 s)
 
 
 //sonar Interrupt variables
@@ -128,29 +121,6 @@ volatile unsigned long last_detection = 0;
 volatile unsigned long last_stop = 0;
 volatile uint8_t stopCount = 0; // counter on how long the robot has been stopped
 volatile uint8_t test_state = 0;
-
-//flag byte to hold sensor data
-byte flag = 0;    // Flag to hold IR & Sonar data - used to create the state machine
-
-//bit definitions for sensor data flag byte
-#define obFront   0 // Front IR trip
-#define obRear    1 // Rear IR trip
-#define obRight   2 // Right IR trip
-#define obLeft    3 // Left IR trip
-#define obFLeft   4 // Left Sonar trip
-#define obFRight  5 // Right Sonar trip
-
-//state byte to hold robot motion and state data
-byte state = 0;   //state to hold robot states and motor motion
-
-//bit definitions for robot motion and state byte
-#define movingR   0  // Moving Right Motor in progress flag
-#define movingL   1  // Moving Left Motor in progress flag
-#define fwd       2
-#define rev       3
-#define collide   4
-#define runAway   5
-#define wander    6
 
 void setup() {
   //multipler sonar on timer 2 setup
@@ -296,13 +266,17 @@ void updateIR() {
   irLeftAvg = irLeftList.reading(analogRead(irLeft));
   irRightAvg = irRightList.reading(analogRead(irRight));
 
+  int irFrontDist = 2000/(irFrontAvg+50)-1.5;
+  int irRearDist = 2000/(irRearAvg+50)-1.5;
+  int irLeftDist = 2500/(irLeftAvg-32)-1.8;
+  int irRightDist = 2500/(irRightAvg-32)-1.8;
   
   //  print IR data
-      //Serial.println("frontIR\tbackIR\tleftIR\trightIR");
-      //Serial.print(irFrontAvg); Serial.print("\t");
-      //Serial.print(irRearAvg); Serial.print("\t");
-      //Serial.print(irLeftAvg); Serial.print("\t");
-      //Serial.println(irRightAvg);
+  Serial.println("frontIR\tbackIR\tleftIR\trightIR");
+  Serial.print(irFrontDist); Serial.print("\t");
+  Serial.print(irRearDist); Serial.print("\t");
+  Serial.print(irLeftDist); Serial.print("\t");
+  Serial.println(irRightDist);
 }
 
 
@@ -328,12 +302,12 @@ void updateSonar() {
           srLeftAvg = cm[0];
         if (cm[1] > 0)
           srRightAvg = cm[1];
-       Serial.print("lt snr:\t");
-       Serial.print(srLeftAvg);
-        Serial.print(" cm ");
-        Serial.print("\trt snr:\t");
-        Serial.print(srRightAvg);
-        Serial.println(" cm");
+//       Serial.print("lt snr:\t");
+//       Serial.print(srLeftAvg);
+//        Serial.print(" cm ");
+//        Serial.print("\trt snr:\t");
+//        Serial.print(srRightAvg);
+//        Serial.println(" cm");
       }
       sonar[currentSensor].timer_stop();          // Make sure previous timer is canceled before starting a new ping (insurance).
       currentSensor = i;                          // Sensor being accessed.
