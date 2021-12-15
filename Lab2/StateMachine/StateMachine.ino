@@ -189,7 +189,7 @@ void updateSensors() {
   state = 0;      //clear all state flags
   updateIR();     //update IR readings and update flag variable and state machine
   //updateSonar();  //update Sonar readings and update flag variable and state machine
-  //updateSonar2(); //there are 2 ways to read sonar data, this is the 2nd option, use whichever one works best for your hardware
+  updateSonar2(); //there are 2 ways to read sonar data, this is the 2nd option, use whichever one works best for your hardware
   updateState();  //update State Machine based upon sensor readings
   //delay(1000);     //added so that you can read the data on the serial monitor
 }
@@ -278,10 +278,10 @@ void updateSonar2() {
   srRightAvg =  sonarRt.ping_in(); //right sonara in inches
   delay(50);
   srLeftAvg = sonarLt.ping_in(); //left sonar in inches
-  //    Serial.print("lt snr:\t");
-  //    Serial.print(srLeftAvg);
-  //    Serial.print("rt snr:\t");
-  //    Serial.println(srRightAvg);
+      Serial.print("lt snr:\t");
+      Serial.print(srLeftAvg);
+      Serial.print("rt snr:\t");
+      Serial.println(srRightAvg);
   if (srRightAvg < snrThresh && srRightAvg > minThresh)
     bitSet(flag, obFRight);//set the front right obstacle
   else
@@ -365,4 +365,3 @@ void runToStop ( void ) {
     }
   }
 }
-

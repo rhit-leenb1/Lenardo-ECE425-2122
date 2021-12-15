@@ -213,13 +213,13 @@ void obsRoutine() {
   //       (srLeftAvg < snrThresh && srLeftAvg > minThresh)) || (irFrontAvg > irThresh)) {
   if (((srRightAvg < snrThresh && srRightAvg > minThresh) &&
        (srLeftAvg < snrThresh && srLeftAvg > minThresh)) ) {
-    //    Serial.println("obstacle detected: stop Robot");
-    //    Serial.print("f:\t"); Serial.print(irFrontAvg); Serial.print("\t");
-    //    Serial.print("b:\t"); Serial.print(irRearAvg); Serial.print("\t");
-    //    Serial.print("l:\t"); Serial.print(irLeftAvg); Serial.print("\t");
-    //    Serial.print("r:\t"); Serial.print(irRightAvg); Serial.print("\t");
-    //    Serial.print("lt snr:\t"); Serial.print(srLeftAvg); Serial.print("\t");
-    //    Serial.print("rt snr:\t"); Serial.print(srRightAvg); Serial.println("\t");
+        //Serial.println("obstacle detected: stop Robot");
+        //Serial.print("f:\t"); Serial.print(irFrontAvg); Serial.print("\t");
+        //Serial.print("b:\t"); Serial.print(irRearAvg); Serial.print("\t");
+        //Serial.print("l:\t"); Serial.print(irLeftAvg); Serial.print("\t");
+        //Serial.print("r:\t"); Serial.print(irRightAvg); Serial.print("\t");
+        //Serial.print("lt snr:\t"); Serial.print(srLeftAvg); Serial.print("\t");
+        //Serial.print("rt snr:\t"); Serial.print(srRightAvg); Serial.println("\t");
     //Serial.println("\tobstacle: stop");
     digitalWrite(redLED,HIGH);
     stop();//stop the robot
@@ -298,11 +298,11 @@ void updateIR() {
 
   
   //  print IR data
-      Serial.println("frontIR\tbackIR\tleftIR\trightIR");
-      Serial.print(irFrontAvg); Serial.print("\t");
-      Serial.print(irRearAvg); Serial.print("\t");
-      Serial.print(irLeftAvg); Serial.print("\t");
-      Serial.println(irRightAvg);
+      //Serial.println("frontIR\tbackIR\tleftIR\trightIR");
+      //Serial.print(irFrontAvg); Serial.print("\t");
+      //Serial.print(irRearAvg); Serial.print("\t");
+      //Serial.print(irLeftAvg); Serial.print("\t");
+      //Serial.println(irRightAvg);
 }
 
 
@@ -328,12 +328,12 @@ void updateSonar() {
           srLeftAvg = cm[0];
         if (cm[1] > 0)
           srRightAvg = cm[1];
-//        Serial.print("lt snr:\t");
-//        Serial.print(srLeftAvg);
-//        Serial.print(" cm ");
-//        Serial.print("\trt snr:\t");
-//        Serial.print(srRightAvg);
-//        Serial.println(" cm");
+       Serial.print("lt snr:\t");
+       Serial.print(srLeftAvg);
+        Serial.print(" cm ");
+        Serial.print("\trt snr:\t");
+        Serial.print(srRightAvg);
+        Serial.println(" cm");
       }
       sonar[currentSensor].timer_stop();          // Make sure previous timer is canceled before starting a new ping (insurance).
       currentSensor = i;                          // Sensor being accessed.
@@ -360,9 +360,9 @@ void oneSensorCycle() { // Sensor ping cycle complete, do something with the res
   }
   srLeftAvg = cm[0];
   srRightAvg = cm[1];
-  //  Serial.print("Left Sonar = ");
-  //  Serial.print(srLeftAvg);
-  //  Serial.print("\t\tRight Sonar = ");
-  //  Serial.print(srRightAvg);
-  //  Serial.println();
+    Serial.print("Left Sonar = ");
+    Serial.print(srLeftAvg);
+    Serial.print("\t\tRight Sonar = ");
+    Serial.print(srRightAvg);
+    Serial.println();
 }
