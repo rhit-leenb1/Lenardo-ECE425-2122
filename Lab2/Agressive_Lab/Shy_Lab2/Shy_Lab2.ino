@@ -47,11 +47,11 @@ NewPing sonarRt(snrRight, snrRight);  //create an instance of the right sonar
 #define three_rotation 1200 //stepper rotation 3 rotations
 #define max_accel     10000//maximum robot acceleration
 #define robot_spd     250 //set robot speed
-#define robot_spd_mid     150 //set robot speed
+#define robot_spd_mid     125 //set robot speed
 #define robot_spd_min     50 //set robot speed
 #define max_spd       2500//maximum robot speed
 
-#define irThresh    400 // The IR threshold for presence of an obstacle in ADC value
+#define irThresh    6 // The IR threshold for presence of an obstacle in ADC value
 #define snrThresh   18  // The sonar threshold for presence of an obstacle in cm
 #define snrThreshmid   15  // The sonar midian threshold for presence of an obstacle in cm
 #define snrThreshmin   10  // The sonar minimum threshold for presence of an obstacle in cm
@@ -60,8 +60,16 @@ NewPing sonarRt(snrRight, snrRight);  //create an instance of the right sonar
 #define baud_rate 9600//set serial communication baud rate
 
 // IR
-
+#define irFront A8    //front IR analog pin
+#define irRear A9    //back IR analog pin
+#define irRight A10   //right IR analog pin
+#define irLeft A11   //left IR analog pin
 //
+
+int inirF = 0;
+int inirB = 0;
+int inirL = 0;
+int inirR = 0;
 
 //sonar Interrupt variables
 volatile unsigned long last_detection = 0;
@@ -72,10 +80,8 @@ int srLeftAvg;  //variable to holde left sonar data
 int srRightAvg; //variable to hold right sonar data
 volatile boolean test_state; //variable to hold test led state for timer interrupt
 
-#define timer_int 250000 // 1/2 second (500000 us) period for timer interrupt
-
-#define right   1  // Moving Right Motor in progress flag
-#define left   2  // Moving Left Motor in progress flag
+#define goright   1  // Moving Right Motor in progress flag
+#define goleft   2  // Moving Left Motor in progress flag
 #define fwd       3
 #define rev       4
 #define collide   5
@@ -213,9 +219,9 @@ void updateState() {
   }
   else if (obstacle == true) { //front sensors triggered
     if ((SonarR == true && SonarL == false)||(IrL == false && IrR == true && IrF == false && IrB == false )){
-      state = rev;//left
+      state = goleft;
     }else if((SonarL == true && SonarR == false)||(IrL == true && IrR == false && IrF == false && IrB == false)){
-      state = rev;//right
+      state = goright;
     }else if((SonarL == true && SonarR == true)||(IrL == true && IrR == false && IrF == true && IrB == false)||(IrL == true && IrR == true && IrF == true && IrB == false)){
       state = rev;
     }else if((IrL == false && IrR == false&& IrF == false && IrB == true)||(IrL == true && IrR == true && IrF == false && IrB == false)){
@@ -244,20 +250,21 @@ void Shyfunction(){
     Serial.println("robot stop");
     stop();
   }else if (obstacle == true && state == rev){
-    reverse(one_rotation, robot_spd);
+    
+    reverse(one_rotation, robot_spd*(6.5-inirF)/6);
     delay(100);
     Serial.println("robot reverse");
     
-  }else if(obstacle == true && state == left){
-    turnleft(one_rotation, robot_spd);
+  }else if(obstacle == true && state == goleft){
+    turnleft(one_rotation, robot_spd*(6.5-inirF)/6);
     delay(100);
     Serial.println("robot left");
-  }else if(obstacle == true && state == right){
-    turnright(one_rotation, robot_spd);
+  }else if(obstacle == true && state == goright){
+    turnright(one_rotation, robot_spd*(6.5-inirF)/6);
     delay(100);
     Serial.println("robot right");
   }else if(obstacle == true && state == fwd){
-    forward(one_rotation, robot_spd);
+    forward(one_rotation, robot_spd*(6.5-inirF)/6);
     delay(100);
     Serial.println("robot reverse");
       
