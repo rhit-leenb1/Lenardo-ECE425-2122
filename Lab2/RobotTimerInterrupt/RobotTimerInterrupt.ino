@@ -35,6 +35,7 @@
 #include <MultiStepper.h>//include multiple stepper motor library
 #include <NewPing.h> //include sonar library
 #include <TimerOne.h>
+#include "movingAvg.h" //including moving average library
 
 //define stepper motor pin numbers connections
 const int rtStepPin = 50; //right stepper motor step pin
@@ -51,16 +52,23 @@ AccelStepper stepperLeft(AccelStepper::DRIVER, ltStepPin, ltDirPin);//create ins
 MultiStepper steppers;//create instance to control multiple steppers at the same time
 
 //define IR sensor connections
-#define irFront A8    //front IR analog pin
-#define irRear A9    //back IR analog pin
-#define irRight A10   //right IR analog pin
-#define irLeft A11   //left IR analog pin
+#define irFront A1    //front IR analog pin
+#define irRear A2    //back IR analog pin
+#define irRight A3   //right IR analog pin
+#define irLeft A0   //left IR analog pin
+
+//#define irFront A8    //front IR analog pin
+//#define irRear A9    //back IR analog pin
+//#define irRight A10   //right IR analog pin
+//#define irLeft A11   //left IR analog pin
 #define button A15    //pushbutton 
 
 ///////////// NEW SONAR CLASSES FOR TIMER 2 INTERRUPT/////////////////
 //define sonar sensor connections
 #define snrLeft   A1   //front left sonar 
 #define snrRight  A2  //front right sonar 
+//#define snrLeft   A1   //front left sonar 
+//#define snrRight  A2  //front right sonar 
 #define SONAR_NUM     2         // Number of sensors.
 #define MAX_DISTANCE 200        // Maximum distance (in cm) to ping.
 #define PING_INTERVAL 125        // Milliseconds between sensor pings (29ms is about the min to avoid cross-sensor echo).
@@ -97,6 +105,12 @@ NewPing sonar[SONAR_NUM] = {     // Sensor object array.
 #define minThresh   0   // The sonar minimum threshold to filter out noise
 #define stopThresh  150 // If the robot has been stopped for this threshold move
 
+const int irListSize = 20;
+movingAvg irFrontList(20);  //variable to holds list of last front IR reading
+movingAvg irLeftList(20);   //variable to holds list of last left IR reading
+movingAvg irRearList(20);   //variable to holds list of last rear IR reading
+movingAvg irRightList(20);   //variable to holds list of last right IR reading
+
 int irFrontAvg;  //variable to hold average of current front IR reading
 int irLeftAvg;   //variable to hold average of current left IR reading
 int irRearAvg;   //variable to hold average of current rear IR reading
@@ -106,7 +120,7 @@ int srRightAvg;  //variable to hold average or right sonar current reading
 
 #define baud_rate     9600  //set serial communication baud rate
 #define TIME          500   //pause time
-#define timer_int     125000 //timer interrupt interval in microseconds (range 1 us to 8.3 s)
+#define timer_int     1250 //timer interrupt interval in microseconds (range 1 us to 8.3 s)
 
 
 //sonar Interrupt variables
@@ -167,9 +181,18 @@ void setup() {
   steppers.addStepper(stepperLeft);//add left motor to MultiStepper
   digitalWrite(stepperEnable, stepperEnTrue);//turns on the stepper motor driver
   digitalWrite(enableLED, HIGH);//turn on enable LED
+
+  
   //Timer Interrupt Set Up
   Timer1.initialize(timer_int);         // initialize timer1, and set a timer_int second period
   Timer1.attachInterrupt(updateSensors);  // attaches updateIR() as a timer overflow interrupt
+
+  //Moving Average Set Up
+  irFrontList.begin();
+  irLeftList.begin();
+  irRightList.begin();
+  irRearList.begin();
+  
   //Set up serial communication
   Serial.begin(baud_rate);//start serial communication in order to debug the software while coding
   Serial.println("Timer Interrupt to Update Sensors......");
@@ -178,7 +201,7 @@ void setup() {
 }
 
 void loop() {
-  digitalWrite(grnLED,HIGH);
+  //digitalWrite(grnLED,HIGH);
   obsRoutine();
   //forward(qrtr_rot);
 }
@@ -265,12 +288,14 @@ void updateSensors() {
 void updateIR() {
   //test_state = !test_state;//LED to test the heartbeat of the timer interrupt routine
   //digitalWrite(enableLED, test_state);  // Toggles the LED to let you know the timer is working
-  irFrontAvg = analogRead(irFront);
-  irRearAvg = analogRead(irRear);
-  irLeftAvg = analogRead(irLeft);
-  irRightAvg = analogRead(irRight);
 
-  irFrontAvg = 899.36*pow(irFrontAvg,-0.92);
+
+  
+  irFrontAvg = irFrontList.reading(analogRead(irFront));
+  irRearAvg = irRearList.reading(analogRead(irRear));
+  irLeftAvg = irLeftList.reading(analogRead(irLeft));
+  irRightAvg = irRightList.reading(analogRead(irRight));
+
   
   //  print IR data
       Serial.println("frontIR\tbackIR\tleftIR\trightIR");
