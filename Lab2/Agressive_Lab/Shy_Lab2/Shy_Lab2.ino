@@ -2,6 +2,7 @@
 #include <MultiStepper.h>//include multiple stepper motor library
 #include <NewPing.h> //include sonar library
 #include <TimerOne.h>
+#include "movingAvg.h" //including moving average library
 
 const int rtStepPin = 50; //right stepper motor step pin
 const int rtDirPin = 51;  // right stepper motor direction pin
@@ -64,12 +65,22 @@ NewPing sonarRt(snrRight, snrRight);  //create an instance of the right sonar
 #define irRear A9    //back IR analog pin
 #define irRight A10   //right IR analog pin
 #define irLeft A11   //left IR analog pin
+
+const int irListSize = 10;
+movingAvg irFrontList(irListSize);  //variable to holds list of last front IR reading
+movingAvg irLeftList(irListSize);   //variable to holds list of last left IR reading
+movingAvg irRearList(irListSize);   //variable to holds list of last rear IR reading
+movingAvg irRightList(irListSize);   //variable to holds list of last right IR reading
 //
 
 int inirF = 0;
 int inirB = 0;
 int inirL = 0;
 int inirR = 0;
+int inirFAvg = 0;
+int inirBAvg = 0;
+int inirLAvg = 0;
+int inirRAvg = 0;
 
 //sonar Interrupt variables
 volatile unsigned long last_detection = 0;
@@ -133,6 +144,11 @@ void setup() {
 
   Timer1.initialize(timer_int);         // initialize timer1, and set a timer_int second period
   Timer1.attachInterrupt(updateSensors);  // attaches updateIR() as a timer overflow interrupt
+  //Moving Average Set Up
+  irFrontList.begin();
+  irLeftList.begin();
+  irRightList.begin();
+  irRearList.begin();
 
   Serial.begin(baud_rate);//start serial communication in order to debug the software while coding
   Serial.println("Timer Interrupt to Update Sensors......");
@@ -281,7 +297,7 @@ void updateSensors() {
   digitalWrite(test_led, test_state);
   state = 0;
   obstacle = false;
-  
+  updateIR();
   updateSonar2();
   
   updateState();
@@ -335,4 +351,57 @@ void updateSonar2() {
     //bitClear(flag, obFLeft);//clear the front left obstacle
     SonarL = false;
   }
+}
+
+void updateIR() {
+  //test_state = !test_state;//LED to test the heartbeat of the timer interrupt routine
+  //digitalWrite(enableLED, test_state);  // Toggles the LED to let you know the timer is working
+  IrF == false;
+  IrB == false;
+  IrL == false;
+  IrR == false;
+  
+  inirFAvg = irFrontList.reading(analogRead(irFront));
+  inirBAvg = irRearList.reading(analogRead(irRear));
+  inirLAvg = irLeftList.reading(analogRead(irLeft));
+  inirRAvg = irRightList.reading(analogRead(irRight));
+
+  int inirF = 2000/(inirFAvg+50)-1.5;
+  int inirB = 2000/(inirBAvg+50)-1.5;
+  int inirL = 2500/(inirLAvg-32)-1.8;
+  int inirR = 2500/(inirRAvg-32)-1.8;
+
+  
+  //  print IR data
+      Serial.println("frontIR\tbackIR\tleftIR\trightIR");
+      Serial.print(inirF); Serial.print("\t");
+      Serial.print(inirB); Serial.print("\t");
+      Serial.print(inirL); Serial.print("\t");
+      Serial.println(inirR);
+
+  if (inirF <= irThresh){
+    obstacle = true;
+    IrF == true;
+  }else{
+    IrF == false;
+  }
+    if (inirB <= irThresh){
+    obstacle = true;
+    IrB == true;
+  }else{
+    IrB == false;
+  }
+    if (inirL <= irThresh){
+    obstacle = true;
+    IrL == true;
+  }else{
+    IrL == false;
+  }
+    if (inirF <= irThresh){
+    obstacle = true;
+    IrR == true;
+  }else{
+    IrR == false;
+  }
+  
 }

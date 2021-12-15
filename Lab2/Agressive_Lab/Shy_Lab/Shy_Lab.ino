@@ -62,6 +62,7 @@ NewPing sonarRt(snrRight, snrRight);  //create an instance of the right sonar
 // IR
 
 //
+
 //sonar Interrupt variables
 volatile unsigned long last_detection = 0;
 volatile unsigned long last_stop = 0;
