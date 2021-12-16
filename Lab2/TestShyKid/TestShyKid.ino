@@ -52,9 +52,9 @@ AccelStepper stepperLeft(AccelStepper::DRIVER, ltStepPin, ltDirPin);//create ins
 MultiStepper steppers;//create instance to control multiple steppers at the same time
 
 //define IR sensor connections
-#define irFront A8    //front IR analog pin
+#define irFront A10    //front IR analog pin
 #define irRear A9    //back IR analog pin
-#define irRight A10   //right IR analog pin
+#define irRight A12   //right IR analog pin
 #define irLeft A11   //left IR analog pin
 #define button A15    //pushbutton 
 
@@ -94,12 +94,12 @@ NewPing sonar[SONAR_NUM] = {     // Sensor object array.
 
 
 #define irThresh    400 // The IR threshold for presence of an obstacle in ADC value
-#define snrThresh   10  // The sonar threshold for presence of an obstacle in cm
+#define snrThresh   15  // The sonar threshold for presence of an obstacle in cm
 #define minThresh   0   // The sonar minimum threshold to filter out noise
 #define stopThresh  150 // If the robot has been stopped for this threshold move
 
 #define sensorDist 6    //Threshold for repulsive forces (shykid using ir on left,right,rear) [in]
-#define collisionDist 4 //Threshold for colliding front sensor (shykid using ir on left,right,rear) [in]
+#define collisionDist 6 //Threshold for colliding front sensor (shykid using ir on left,right,rear) [in]
 
 const int irListSize = 10;
 movingAvg irFrontList(irListSize);  //variable to holds list of last front IR reading
@@ -178,8 +178,10 @@ void setup() {
 }
 
 void loop() {
+  updateSonar();
   digitalWrite(ylwLED,HIGH);
   setStepperSpeeds();
+  //Serial.print(rightSpeed); Serial.print("\t");Serial.println(leftSpeed);
   //obsRoutine();
   //forward(qrtr_rot);
 }
@@ -204,10 +206,11 @@ void updateLeonardo() {
 }
 
 void updateCollisionDetection(){
-  if(irFrontAvg <= collisionDist && irFrontAvg > 0){
-    leftSpeed = 0;
-    rightSpeed = 0;
+  if (((srRightAvg < snrThresh && srRightAvg > minThresh) &&
+       (srLeftAvg < snrThresh && srLeftAvg > minThresh)) ) {
     digitalWrite(redLED,HIGH);
+    rightSpeed = -robot_spd - (max_spd - robot_spd)/(snrThresh)*(sensorDist-srRightAvg);
+    leftSpeed = 0;
   } else {
     digitalWrite(redLED,LOW);
   }
@@ -236,7 +239,7 @@ void updatePathingForces(){
 */
 void updateSensors() {
   updateIR();
-  updateSonar();
+  //updateSonar();
 }
 
 /*
@@ -319,9 +322,9 @@ void oneSensorCycle() { // Sensor ping cycle complete, do something with the res
   }
   srLeftAvg = cm[0];
   srRightAvg = cm[1];
-    Serial.print("Left Sonar = ");
-    Serial.print(srLeftAvg);
-    Serial.print("\t\tRight Sonar = ");
-    Serial.print(srRightAvg);
-    Serial.println();
+//    Serial.print("Left Sonar = ");
+//    Serial.print(srLeftAvg);
+//    Serial.print("\t\tRight Sonar = ");
+//    Serial.print(srRightAvg);
+//    Serial.println();
 }
