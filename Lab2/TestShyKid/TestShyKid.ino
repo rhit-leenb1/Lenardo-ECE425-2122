@@ -89,23 +89,27 @@ NewPing sonar[SONAR_NUM] = {     // Sensor object array.
 #define two_rotation  800 //stepper motor 2 rotations
 #define three_rotation 1200 //stepper rotation 3 rotations
 #define max_accel     10000//maximum robot acceleration
-#define robot_spd     150 //set robot speed
+#define robot_spd     0 //set robot speed
 #define max_spd       250//maximum robot speed
 
 
 #define irThresh    400 // The IR threshold for presence of an obstacle in ADC value
-#define snrThresh   15  // The sonar threshold for presence of an obstacle in cm
+#define snrThresh   20  // The sonar threshold for presence of an obstacle in cm
 #define minThresh   0   // The sonar minimum threshold to filter out noise
 #define stopThresh  150 // If the robot has been stopped for this threshold move
 
-#define sensorDist 6    //Threshold for repulsive forces (shykid using ir on left,right,rear) [in]
-#define collisionDist 6 //Threshold for colliding front sensor (shykid using ir on left,right,rear) [in]
+#define minSensorDist 1 //Threshold for stopping
+#define sensorDist 8    //Threshold for repulsive forces (shykid using ir on left,right,rear) [in]
 
 const int irListSize = 10;
 movingAvg irFrontList(irListSize);  //variable to holds list of last front IR reading
 movingAvg irLeftList(irListSize);   //variable to holds list of last left IR reading
 movingAvg irRearList(irListSize);   //variable to holds list of last rear IR reading
 movingAvg irRightList(irListSize);   //variable to holds list of last right IR reading
+
+int rightDirection = 1; //1 for going forward, -1 for going backwards
+int leftDirection = -1;
+boolean changeDirection = false;
 
 int irFrontAvg;  //variable to hold average of current front IR reading
 int irLeftAvg;   //variable to hold average of current left IR reading
@@ -115,7 +119,7 @@ int srLeftAvg;   //variable to hold average of left sonar current reading
 int srRightAvg;  //variable to hold average or right sonar current reading
 
 #define baud_rate     9600  //set serial communication baud rate
-#define TIME          500   //pause time
+#define TIME          250   //pause time
 #define timer_int     125000 //timer interrupt interval in microseconds (range 1 us to 8.3 s)
 
 
@@ -179,6 +183,7 @@ void setup() {
 
 void loop() {
   updateSonar();
+  updateCollisionDetection();
   digitalWrite(ylwLED,HIGH);
   setStepperSpeeds();
   //Serial.print(rightSpeed); Serial.print("\t");Serial.println(leftSpeed);
@@ -187,10 +192,15 @@ void loop() {
 }
 
 void setStepperSpeeds(){
+  if (changeDirection){
+    rightSpeed = rightSpeed * rightDirection;
+    leftSpeed = leftSpeed * leftDirection;
+    changeDirection = false;
+  }
   stepperRight.setSpeed(rightSpeed);//set right motor speed
   stepperLeft.setSpeed(leftSpeed);//set left motor speed
-  //Serial.print(rightSpeed); Serial.print("\t");
-  //Serial.println(leftSpeed);
+  Serial.print(rightSpeed); Serial.print("\t");
+  Serial.println(leftSpeed);
   stepperRight.runSpeed();
   stepperLeft.runSpeed();
 }
@@ -202,36 +212,66 @@ void setStepperSpeeds(){
 void updateLeonardo() {
   updateSensors();
   updatePathingForces();
-  updateCollisionDetection();
 }
 
 void updateCollisionDetection(){
-  if (((srRightAvg < snrThresh && srRightAvg > minThresh) &&
-       (srLeftAvg < snrThresh && srLeftAvg > minThresh)) ) {
-    digitalWrite(redLED,HIGH);
-    rightSpeed = -robot_spd - (max_spd - robot_spd)/(snrThresh)*(sensorDist-srRightAvg);
-    leftSpeed = 0;
-  } else {
-    digitalWrite(redLED,LOW);
-  }
+  
 }
 
 void updatePathingForces(){
-  if(irLeftAvg <= sensorDist && irLeftAvg > 0){
+  checkLeftRight();
+  if(irRearAvg <= sensorDist && irRearAvg > minSensorDist){
+    rightSpeed = rightSpeed + (max_spd - rightSpeed)/sensorDist*(sensorDist-irRearAvg);
+    leftSpeed = leftSpeed + (max_spd - leftSpeed)/sensorDist*(sensorDist-irRearAvg);
+    rightDirection = 1;
+    leftDirection = 1;
+    changeDirection = true;
+  }
+  if (((srRightAvg < snrThresh && srRightAvg > minThresh) &&
+       (srLeftAvg < snrThresh && srLeftAvg > minThresh)) ) {
+    rightSpeed = robot_spd + (max_spd - robot_spd)/(snrThresh)*(snrThresh-srRightAvg);
+    leftSpeed = robot_spd + (max_spd - robot_spd)/(snrThresh)*(snrThresh-srLeftAvg);
+
+    changeDirection = true;
+    rightDirection = -1;
+    leftDirection = -1;
+    
+  }
+
+  if(((srRightAvg < snrThresh && srRightAvg > minThresh) &&
+       (srLeftAvg < snrThresh && srLeftAvg > minThresh)) &&
+       (irRearAvg <= sensorDist && irRearAvg > minSensorDist) ){
+    checkLeftRight();
+  }
+
+  if((irLeftAvg <= sensorDist && irLeftAvg > minSensorDist)&&(irRightAvg <= sensorDist && irRightAvg > minSensorDist)&&
+     (irRearAvg <= sensorDist && irRearAvg > minSensorDist) && ((srRightAvg < snrThresh && srRightAvg > minThresh) &&
+     (srLeftAvg < snrThresh && srLeftAvg > minThresh))){
+    leftSpeed = 0;
+    rightSpeed = 0;
+  }
+
+}
+
+void checkLeftRight(){
+  if(irLeftAvg <= sensorDist && irLeftAvg > minSensorDist){
     leftSpeed = robot_spd + (max_spd - robot_spd)/sensorDist*(sensorDist-irLeftAvg);
+    rightSpeed = robot_spd + (max_spd - robot_spd)/sensorDist*(sensorDist-irLeftAvg);
+    rightDirection = -1;
+    leftDirection = 1;
+    changeDirection = true;
   } else {
     leftSpeed = robot_spd;
   }
-  if(irRightAvg <= sensorDist && irRightAvg > 0){
+  if(irRightAvg <= sensorDist && irRightAvg > minSensorDist){
     rightSpeed = robot_spd + (max_spd - robot_spd)/sensorDist*(sensorDist-irRightAvg);
+    leftSpeed = robot_spd + (max_spd - robot_spd)/sensorDist*(sensorDist-irLeftAvg);
+    rightDirection = 1;
+    changeDirection = true;
   } else {
     rightSpeed = robot_spd;
   }
-  if(irRearAvg <= sensorDist && irRearAvg > 0){
-    rightSpeed = rightSpeed + (max_spd - rightSpeed)/sensorDist*(sensorDist-irRearAvg);
-    leftSpeed = leftSpeed + (max_spd - leftSpeed)/sensorDist*(sensorDist-irRearAvg);;
-  }
-  
+
 }
 
 /*This is a sample updateSensors() function, it is called from the timer 1 interrupt an the updateSonar uses the timer2
