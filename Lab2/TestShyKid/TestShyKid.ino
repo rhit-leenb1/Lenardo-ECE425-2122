@@ -89,7 +89,7 @@ NewPing sonar[SONAR_NUM] = {     // Sensor object array.
 #define two_rotation  800 //stepper motor 2 rotations
 #define three_rotation 1200 //stepper rotation 3 rotations
 #define max_accel     10000//maximum robot acceleration
-#define robot_spd     250 //set robot speed
+#define robot_spd     150 //set robot speed
 #define max_spd       250//maximum robot speed
 
 
@@ -97,6 +97,9 @@ NewPing sonar[SONAR_NUM] = {     // Sensor object array.
 #define snrThresh   10  // The sonar threshold for presence of an obstacle in cm
 #define minThresh   0   // The sonar minimum threshold to filter out noise
 #define stopThresh  150 // If the robot has been stopped for this threshold move
+
+#define sensorDist 6    //Threshold for repulsive forces (shykid using ir on left,right,rear) [in]
+#define collisionDist 4 //Threshold for colliding front sensor (shykid using ir on left,right,rear) [in]
 
 const int irListSize = 10;
 movingAvg irFrontList(irListSize);  //variable to holds list of last front IR reading
@@ -123,8 +126,8 @@ volatile uint8_t stopCount = 0; // counter on how long the robot has been stoppe
 volatile uint8_t test_state = 0;
 
 //set wheel speeds
-int leftSpeed = 100;
-int rightSpeed = 100;
+int leftSpeed = robot_spd;
+int rightSpeed = robot_spd;
 
 void setup() {
   //multipler sonar on timer 2 setup
@@ -175,7 +178,7 @@ void setup() {
 }
 
 void loop() {
-  //digitalWrite(grnLED,HIGH);
+  digitalWrite(ylwLED,HIGH);
   setStepperSpeeds();
   //obsRoutine();
   //forward(qrtr_rot);
@@ -190,93 +193,42 @@ void setStepperSpeeds(){
   stepperLeft.runSpeed();
 }
 
-//obstacle avoidance routine based upon timer interrupt, robot will drive forward
-//until IR or sonar data is below the threshold, you need to make this work for reverse also
-void obsRoutine() {
-  //  if (((srRightAvg < snrThresh && srRightAvg > minThresh) &&
-  //       (srLeftAvg < snrThresh && srLeftAvg > minThresh)) || (irFrontAvg > irThresh)) {
-  if (((srRightAvg < snrThresh && srRightAvg > minThresh) &&
-       (srLeftAvg < snrThresh && srLeftAvg > minThresh)) ) {
-        //Serial.println("obstacle detected: stop Robot");
-        //Serial.print("f:\t"); Serial.print(irFrontAvg); Serial.print("\t");
-        //Serial.print("b:\t"); Serial.print(irRearAvg); Serial.print("\t");
-        //Serial.print("l:\t"); Serial.print(irLeftAvg); Serial.print("\t");
-        //Serial.print("r:\t"); Serial.print(irRightAvg); Serial.print("\t");
-        //Serial.print("lt snr:\t"); Serial.print(srLeftAvg); Serial.print("\t");
-        //Serial.print("rt snr:\t"); Serial.print(srRightAvg); Serial.println("\t");
-    //Serial.println("\tobstacle: stop");
-    digitalWrite(redLED,HIGH);
-    stop();//stop the robot
-  }
-  else {
-    digitalWrite(redLED,LOW);
-    //bitSet(state, movingR);//set right motor moving
-    //bitSet(state, movingL);//set left motor moving
-    //Serial.println("\tno obstacle: forward");
-    forward(qrtr_rot);
-  }
-}
-
-
-/* Motion Commands */
-
-/*
-  move() is a library function for relative movement to set a target position
-  moveTo() is a library function for absolute movement to set a target position
-  stop() is a library function that causes the stepper to stop as quickly as possible
-  runToPosition() is a library function that uses blocking with accel/decel to achieve target position
-  runToNewPosition() is a library function that uses blocking with accel/decel to achieve target posiiton
-  run() is a library function that uses accel and decel to achieve target position, NO BLOCKING
-  runSpeed() is a library function that uses constant speed to achieve target position, NO BLOCKING
-  runSpeedToPosition() is a library function that uses constant speed to achieve target posiiton, BLOCKING
-*/
-
-void forward(int rot) {
-  long positions[2]; // Array of desired stepper positions
-  stepperRight.setMaxSpeed(robot_spd);//set right motor speed
-  stepperLeft.setMaxSpeed(robot_spd);//set left motor speed
-  //stepperRight.setSpeed(robot_spd);//set right motor speed
-  //stepperLeft.setSpeed(robot_spd);//set left motor speed
-
-  //stepperRight.setCurrentPosition(0);
-  //stepperLeft.setCurrentPosition(0);
-  positions[0] = stepperRight.currentPosition() + rot; //right motor absolute position
-  positions[1] = stepperLeft.currentPosition() + rot; //left motor absolute position
-  steppers.moveTo(positions);
-
-  stepperRight.run();
-  stepperLeft.run();
-  //steppers.run(); //move forward with no blocking
-}
-
-/*
-   stop the robot
-*/
-void stop() {
-  stepperRight.stop();
-  stepperLeft.stop();
-}
 
 /*This is a sample updateSensors() function, it is called from the timer 1 interrupt an the updateSonar uses the timer2
 
 */
 void updateLeonardo() {
   updateSensors();
-  updatePathing();
+  updatePathingForces();
+  updateCollisionDetection();
 }
 
-void updatePathing(){
-  int sensorDist = 6;
-    if(irLeftAvg <= 6 && irLeftAvg > 0){
-      leftSpeed = 100 + 125*(6-irLeftAvg);
-    } else {
-      leftSpeed = 100;
-    }
-    if(irRightAvg <= 6 && irRightAvg > 0){
-      rightSpeed = 100 + 125*(6-irRightAvg);
-    } else {
-      rightSpeed = 100;
-    }
+void updateCollisionDetection(){
+  if(irFrontAvg <= collisionDist && irFrontAvg > 0){
+    leftSpeed = 0;
+    rightSpeed = 0;
+    digitalWrite(redLED,HIGH);
+  } else {
+    digitalWrite(redLED,LOW);
+  }
+}
+
+void updatePathingForces(){
+  if(irLeftAvg <= sensorDist && irLeftAvg > 0){
+    leftSpeed = robot_spd + (max_spd - robot_spd)/sensorDist*(sensorDist-irLeftAvg);
+  } else {
+    leftSpeed = robot_spd;
+  }
+  if(irRightAvg <= sensorDist && irRightAvg > 0){
+    rightSpeed = robot_spd + (max_spd - robot_spd)/sensorDist*(sensorDist-irRightAvg);
+  } else {
+    rightSpeed = robot_spd;
+  }
+  if(irRearAvg <= sensorDist && irRearAvg > 0){
+    rightSpeed = rightSpeed + (max_spd - rightSpeed)/sensorDist*(sensorDist-irRearAvg);
+    leftSpeed = leftSpeed + (max_spd - leftSpeed)/sensorDist*(sensorDist-irRearAvg);;
+  }
+  
 }
 
 /*This is a sample updateSensors() function, it is called from the timer 1 interrupt an the updateSonar uses the timer2
@@ -305,11 +257,11 @@ void updateIR() {
   irRightAvg = 2500/(irRightAvg-32)-1.8;
   
   //  print IR data
-  Serial.println("frontIR\tbackIR\tleftIR\trightIR");
-  Serial.print(irFrontAvg); Serial.print("\t");
-  Serial.print(irRearAvg); Serial.print("\t");
-  Serial.print(irLeftAvg); Serial.print("\t");
-  Serial.println(irRightAvg);
+//  Serial.println("frontIR\tbackIR\tleftIR\trightIR");
+//  Serial.print(irFrontAvg); Serial.print("\t");
+//  Serial.print(irRearAvg); Serial.print("\t");
+//  Serial.print(irLeftAvg); Serial.print("\t");
+//  Serial.println(irRightAvg);
 }
 
 
