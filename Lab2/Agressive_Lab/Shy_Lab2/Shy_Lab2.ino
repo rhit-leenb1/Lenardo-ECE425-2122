@@ -52,6 +52,10 @@ NewPing sonarRt(snrRight, snrRight);  //create an instance of the right sonar
 #define robot_spd_min     50 //set robot speed
 #define max_spd       2500//maximum robot speed
 
+int spdL = 0;
+int spdR = 0;
+int dir = 1;
+
 #define irThresh    6 // The IR threshold for presence of an obstacle in ADC value
 #define snrThresh   18  // The sonar threshold for presence of an obstacle in cm
 #define snrThreshmid   15  // The sonar midian threshold for presence of an obstacle in cm
@@ -61,9 +65,9 @@ NewPing sonarRt(snrRight, snrRight);  //create an instance of the right sonar
 #define baud_rate 9600//set serial communication baud rate
 
 // IR
-#define irFront A8    //front IR analog pin
+#define irFront A10    //front IR analog pin
 #define irRear A9    //back IR analog pin
-#define irRight A10   //right IR analog pin
+#define irRight A12   //right IR analog pin
 #define irLeft A11   //left IR analog pin
 
 const int irListSize = 10;
@@ -100,15 +104,14 @@ volatile boolean test_state; //variable to hold test led state for timer interru
 #define wander    7
 #define botStop  0
 
-#define timer_int 25000 // 1/2 second (500000 us) period for timer interrupt
-
-bool obstacle = false;
-bool SonarL = false;
-bool SonarR = false;
-bool IrF = false;
-bool IrB = false;
-bool IrL = false;
-bool IrR = false;
+#define timer_int 250000 // 1/2 second (500000 us) period for timer interrupt
+boolean obstacle = false;
+boolean SonarL = false;
+boolean SonarR = false;
+boolean IrF = false;
+boolean IrB = false;
+boolean IrL = false;
+boolean IrR = false;
 
 int state = 0;
 
@@ -157,7 +160,9 @@ void setup() {
 }
 
 void loop() {
-  Shyfunction();
+  //delay(1);
+  //Shyfunction();
+  runatspeed();
 
 }
 
@@ -165,6 +170,14 @@ void stop() {
   stepperRight.stop();
   stepperLeft.stop();
 }
+
+void runatspeed(){
+  stepperRight.setSpeed(spdR);
+  stepperLeft.setSpeed(spdL);
+  stepperRight.runSpeed();
+  stepperLeft.runSpeed();
+}
+
 
 void forward(int rot, int spd) {
   long positions[2]; // Array of desired stepper positions
@@ -175,8 +188,8 @@ void forward(int rot, int spd) {
 
   //stepperRight.setCurrentPosition(0);
   //stepperLeft.setCurrentPosition(0);
-  positions[0] = stepperRight.currentPosition() + rot*10; //right motor absolute position
-  positions[1] = stepperLeft.currentPosition() + rot*10; //left motor absolute position
+  positions[0] = stepperRight.currentPosition() + rot*1; //right motor absolute position
+  positions[1] = stepperLeft.currentPosition() + rot*1; //left motor absolute position
   steppers.moveTo(positions);
 
   //stepperRight.run();
@@ -188,13 +201,13 @@ void forward(int rot, int spd) {
 void turnleft(int rot, int spd) {
   long positions[2]; // Array of desired stepper positions
   stepperRight.setMaxSpeed(spd);//set right motor speed
-  stepperLeft.setMaxSpeed(0);//set left motor speed
+  stepperLeft.setMaxSpeed(spd);//set left motor speed
   //stepperRight.setSpeed(robot_spd);//set right motor speed
   //stepperLeft.setSpeed(robot_spd);//set left motor speed
 
   //stepperRight.setCurrentPosition(0);
   //stepperLeft.setCurrentPosition(0);
-  positions[0] = stepperRight.currentPosition() + rot*10; //right motor absolute position
+  positions[0] = stepperRight.currentPosition() - rot*1; //right motor absolute position
   positions[1] = stepperLeft.currentPosition(); //left motor absolute position
   steppers.moveTo(positions);
 
@@ -215,7 +228,7 @@ void turnright(int rot, int spd) {
   //stepperRight.setCurrentPosition(0);
   //stepperLeft.setCurrentPosition(0);
   positions[0] = stepperRight.currentPosition(); //right motor absolute position
-  positions[1] = stepperLeft.currentPosition()+ rot*10; //left motor absolute position
+  positions[1] = stepperLeft.currentPosition()- rot*1; //left motor absolute position
   steppers.moveTo(positions);
 
   //stepperRight.run();
@@ -230,26 +243,33 @@ void reverse(int rot, int spd) {
 }
 
 void updateState() {
+  if (IrR == true){
+    Serial.println(" IrR True");
+  }
+
+  
   if (obstacle == false) { //no sensors triggered
     state = botStop;
+    Serial.println("obstacle");
   }
   else if (obstacle == true) { //front sensors triggered
-    if ((SonarR == true && SonarL == false)||(IrL == false && IrR == true && IrF == false && IrB == false )){
-      state = goleft;
-    }else if((SonarL == true && SonarR == false)||(IrL == true && IrR == false && IrF == false && IrB == false)){
-      state = goright;
-    }else if((SonarL == true && SonarR == true)||(IrL == true && IrR == false && IrF == true && IrB == false)||(IrL == true && IrR == true && IrF == true && IrB == false)){
-      state = rev;
-    }else if((IrL == false && IrR == false&& IrF == false && IrB == true)||(IrL == true && IrR == true && IrF == false && IrB == false)){
+    if ((SonarL == true && SonarR == false)||(IrL == false && IrR == true && IrB == false )){
+      state = goleft;//(SonarR == true && SonarL == false)||
+      Serial.println("True");
+    }else if((SonarL == true && SonarR == false)||(IrL == true && IrR == false && IrB == false)){
+      state = goright;//(SonarL == true && SonarR == false)||
+    }else if((IrL == false && IrR == false && SonarL == true && SonarR == true && IrB == false)||(IrL == true && IrR == true && SonarL == true && SonarR == true && IrB == false)){
+      state = rev;//(SonarL == true && SonarR == true)||
+    }else if((IrL == false && IrR == false && SonarL == false && SonarR == false && IrB == true)||(IrL == true && IrR == true && SonarL == false && SonarR == false && IrB == false)){
       state = fwd;
-    }else if (IrL == true && IrR == true && IrF == true && IrB == true){
+    }else if (IrL == true && IrR == true && SonarL == true && SonarR == true && IrB == true){
       state = botStop;
     }
 
     
-  }else{
-    state = botStop;
-  }
+  }//else{
+   // state = botStop;
+  //}
   
   //print flag byte
      // Serial.println("\trtSNR\tltSNR\tltIR\trtIR\trearIR\tftIR");
@@ -259,38 +279,82 @@ void updateState() {
      // Serial.println("\twander\trunAway\tcollide\treverse\tforward");
      // Serial.print("state byte: ");
      //Serial.println(state, BIN);
+  Serial.println(state);
 }
 
-void Shyfunction(){
-  if (state == botStop){
-    Serial.println("robot stop");
-    stop();
-  }else if (obstacle == true && state == rev){
-    
-    reverse(one_rotation, robot_spd*(6.5-inirF)/6);
-    delay(100);
-    Serial.println("robot reverse");
-    
-  }else if(obstacle == true && state == goleft){
-    turnleft(one_rotation, robot_spd*(6.5-inirF)/6);
-    delay(100);
-    Serial.println("robot left");
-  }else if(obstacle == true && state == goright){
-    turnright(one_rotation, robot_spd*(6.5-inirF)/6);
-    delay(100);
-    Serial.println("robot right");
-  }else if(obstacle == true && state == fwd){
-    forward(one_rotation, robot_spd*(6.5-inirF)/6);
-    delay(100);
-    Serial.println("robot reverse");
+void updateSpeed(){
+  spdL = 0;
+  spdR = 0;
+
+  if (SonarL == true || SonarR == true){
+        dir = -1;
+  }else{
+        dir = 1;
+  }
+  if (obstacle == false) { //no sensors triggered
+    spdL=0;
+    spdR=0;
+    Serial.println("obstacle");
+  }else if (obstacle == true){
+    if ((IrL == true && IrR == true && SonarL == true && SonarR == true && IrB == true)){
+      spdL=0;
+      spdR=0;
+    }else{
+      
+      if (IrR == true){
+        spdR = spdR+dir*(6.1-inirR)*200;
+      }
+      if (IrL == true){
+        spdL = spdL+dir*(6.1-inirR)*200;
+      }
+      if (IrB == true){
+        spdL = spdL+dir*(6.1-inirB)*150;
+        spdR = spdR+dir*(6.1-inirB)*150;
+      }
+      if (SonarL == true){
+        spdL = spdL+dir*(19-cmFL)*50;
+      }
+      if (SonarR == true){
+        spdR = spdR+dir*(19-cmFR)*50;
+      }
       
     }
-  else{
-    Serial.println("robot stop");
-    stop();
+    
   }
   
 }
+
+//void Shyfunction(){
+//  if (state == botStop){
+//    Serial.println("robot stop1");
+//    stop();
+//  }else if (obstacle == true && state == rev){
+//    
+//    reverse(one_rotation, robot_spd);
+//    delay(50);
+//    Serial.println("robot reverse");
+//    
+//  }else if(obstacle == true && state == goleft){
+//    turnleft(one_rotation, robot_spd);//*(6.5-inirL)/6);
+//    delay(50);
+//    Serial.println("robot left");
+//  }else if(obstacle == true && state == goright){
+//    turnright(one_rotation, robot_spd);//*(6.5-inirR)/6);
+//    delay(50);
+//    Serial.println("robot right");
+//  }else if(obstacle == true && state == fwd){
+//    forward(one_rotation, robot_spd);//*(6.5-inirB)/6);
+//    delay(50);
+//    Serial.println("robot reverse");
+//      
+//    }
+//  else{
+//    Serial.println("robot stop2");
+//    stop();
+//  }
+//  
+//}
+
 
 void updateSensors() {
   test_state = !test_state;
@@ -300,7 +364,8 @@ void updateSensors() {
   updateIR();
   updateSonar2();
   
-  updateState();
+  //updateState();
+  updateSpeed();
   //Serial.println(state);
 }
 
@@ -356,21 +421,26 @@ void updateSonar2() {
 void updateIR() {
   //test_state = !test_state;//LED to test the heartbeat of the timer interrupt routine
   //digitalWrite(enableLED, test_state);  // Toggles the LED to let you know the timer is working
-  IrF == false;
-  IrB == false;
-  IrL == false;
-  IrR == false;
+  IrF = false;
+  IrB = false;
+  IrL = false;
+  IrR = false;
   
   inirFAvg = irFrontList.reading(analogRead(irFront));
   inirBAvg = irRearList.reading(analogRead(irRear));
   inirLAvg = irLeftList.reading(analogRead(irLeft));
   inirRAvg = irRightList.reading(analogRead(irRight));
 
-  int inirF = 2000/(inirFAvg+50)-1.5;
-  int inirB = 2000/(inirBAvg+50)-1.5;
-  int inirL = 2500/(inirLAvg-32)-1.8;
-  int inirR = 2500/(inirRAvg-32)-1.8;
+  
 
+  inirF = 2000/(inirFAvg+50)-1.5;
+  inirB = 2000/(inirBAvg+50)-1.5;
+  inirL = 2500/(inirLAvg-32)-1.8;
+  inirR = 2500/(inirRAvg-32)-1.8;
+
+  if (inirR<=0){
+    inirR = 1000;
+  }
   
   //  print IR data
       Serial.println("frontIR\tbackIR\tleftIR\trightIR");
@@ -381,27 +451,28 @@ void updateIR() {
 
   if (inirF <= irThresh){
     obstacle = true;
-    IrF == true;
+    IrF = true;
+    //Serial.println("True");
   }else{
-    IrF == false;
+    //IrF = false;
   }
-    if (inirB <= irThresh){
+  if (inirB <= irThresh){
     obstacle = true;
-    IrB == true;
+    IrB = true;
   }else{
-    IrB == false;
+    IrB = false;
   }
-    if (inirL <= irThresh){
+  if (inirL <= irThresh){
     obstacle = true;
-    IrL == true;
+    IrL = true;
   }else{
-    IrL == false;
+    IrL = false;
   }
-    if (inirF <= irThresh){
+  if (inirR <= irThresh){
     obstacle = true;
-    IrR == true;
+    IrR = true;
+    Serial.println("True");
   }else{
-    IrR == false;
+    IrR = false;
   }
-  
 }
