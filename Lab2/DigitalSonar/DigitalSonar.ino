@@ -7,12 +7,20 @@
 */
 
 #include <NewPing.h>
+#include <SharpIR.h>
 const int PING_PIN = 8;
 const int PING_PIN_2 = 9;// Arduino pin for both trig and echo tied together on 4 pin [data pin]
+
+#define irFront   A8    //front IR analog pin
+#define irRear    A9    //back IR analog pin
+#define irRight   A10   //right IR analog pin
+#define irLeft    A11   //left IR analog pin
+
 #define snrLeft   A1   //front left sonar 
 #define snrRight  A2  //front right sonar 
 NewPing sonar(snrRight,snrRight);//(PING_PIN, PING_PIN);
 NewPing sonar2(snrLeft,snrLeft);//(PING_PIN_2, PING_PIN_2);
+SharpIR 
 
 void setup() {
   Serial.begin(9600);
