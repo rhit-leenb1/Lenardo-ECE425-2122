@@ -56,7 +56,7 @@ int spdL = 0;
 int spdR = 0;
 int dir = 1;
 
-#define irThresh    6 // The IR threshold for presence of an obstacle in ADC value
+#define irThresh    5 // The IR threshold for presence of an obstacle in ADC value
 #define snrThresh   18  // The sonar threshold for presence of an obstacle in cm
 #define snrThreshmid   15  // The sonar midian threshold for presence of an obstacle in cm
 #define snrThreshmin   10  // The sonar minimum threshold for presence of an obstacle in cm
@@ -118,7 +118,6 @@ int randomstate = 0;
 
 void setup() {
   // put your setup code here, to run once:
-  // put your setup code here, to run once:
   pingTimer[0] = millis() + FIRST_PING_START;           // First ping starts at 75ms, gives time for the Arduino to chill before starting.
   for (uint8_t i = 1; i < SONAR_NUM; i++)               // Set the starting time for each sensor.
   pingTimer[i] = pingTimer[i - 1] + PING_INTERVAL;
@@ -161,22 +160,35 @@ void setup() {
   Serial.println("Timer Interrupt to Update Sensors......");
  // digitalWrite(redLED,HIGH);
   delay(2500); //seconds before the robot moves
+
 }
 
-void loop() {
-  //delay(1);
-  //Shyfunction();
-  if (obstacle == true){
-    runatspeed();
-    digitalWrite(grnLED, LOW);//turn off green LED
-    digitalWrite(ylwLED, HIGH);//turn on yellow LED
-  }else if(obstacle == false){
-    //stop;
-    randomwonder();
-    digitalWrite(grnLED, HIGH);//turn on green LED
-    digitalWrite(ylwLED, LOW);//turn on yellow LED
-  }
+//(6,0),(0,-4)
 
+void loop() {
+  // put your main code here, to run repeatedly:
+   // put your main code here, to run repeatedly:
+  forward(one_rotation, robot_spd);//*(6.5-inirB)/6);
+  delay(5000);
+//  gotoangle(90);
+//  delay(500);
+//  reverse(one_rotation, robot_spd);
+//    spin(-90);
+//    delay(500);
+//    spin(90);
+//    delay(500);
+  
+//  if (obstacle == true){
+//    
+//    digitalWrite(grnLED, LOW);//turn off green LED
+//    digitalWrite(ylwLED, HIGH);//turn on yellow LED
+//    Shyfunction();
+//  }else if(obstacle == false){
+//    stop;
+//    //randomwonder();
+//    //digitalWrite(grnLED, HIGH);//turn on green LED
+//    digitalWrite(ylwLED, LOW);//turn on yellow LED
+//  }
 }
 
 void stop() {
@@ -184,234 +196,213 @@ void stop() {
   stepperLeft.stop();
 }
 
-void runatspeed(){
-  stepperRight.setSpeed(spdR);
-  stepperLeft.setSpeed(spdL);
-  stepperRight.runSpeed();
-  stepperLeft.runSpeed();
-}
-
-
 void forward(int rot, int spd) {
-  long positions[2]; // Array of desired stepper positions
+//  long positions[2]; // Array of desired stepper positions
+//  stepperRight.setMaxSpeed(spd);//set right motor speed
+//  stepperLeft.setMaxSpeed(spd);//set left motor speed
+//  positions[0] = stepperRight.currentPosition() + rot*1; //right motor absolute position
+//  positions[1] = stepperLeft.currentPosition() + rot*1; //left motor absolute position
+//  steppers.moveTo(positions);
+  stepperRight.move(rot);//move one full rotation forward relative to current position
+  stepperLeft.move(rot);//move one full rotation forward relative to current position
   stepperRight.setMaxSpeed(spd);//set right motor speed
   stepperLeft.setMaxSpeed(spd);//set left motor speed
-  //stepperRight.setSpeed(robot_spd);//set right motor speed
-  //stepperLeft.setSpeed(robot_spd);//set left motor speed
-
-  //stepperRight.setCurrentPosition(0);
-  //stepperLeft.setCurrentPosition(0);
-  positions[0] = stepperRight.currentPosition() + rot*1; //right motor absolute position
-  positions[1] = stepperLeft.currentPosition() + rot*1; //left motor absolute position
-  steppers.moveTo(positions);
+  runAtSpeedToPosition(); //run both stepper to set position
+  runToStop();//run until the robot reaches the target
 
   //stepperRight.run();
   //stepperLeft.run();
   //steppers.runSpeedToPosition();
   //delay(100);
   //steppers.run(); //move forward with no blocking
-  runToStop();
-}
-void turnleft(int rot, int spd) {
-  long positions[2]; // Array of desired stepper positions
-  stepperRight.setMaxSpeed(spd);//set right motor speed
-  stepperLeft.setMaxSpeed(spd);//set left motor speed
-  //stepperRight.setSpeed(robot_spd);//set right motor speed
-  //stepperLeft.setSpeed(robot_spd);//set left motor speed
-
-  //stepperRight.setCurrentPosition(0);
-  //stepperLeft.setCurrentPosition(0);
-  positions[0] = stepperRight.currentPosition() + rot*1; //right motor absolute position
-  positions[1] = stepperLeft.currentPosition(); //left motor absolute position
-  steppers.moveTo(positions);
-
-  //stepperRight.run();
-  //stepperLeft.run();
-  //steppers.runSpeedToPosition();
-  //delay(100);
-  //steppers.run(); //move forward with no blocking
-  runToStop();
-}
-
-void turnright(int rot, int spd) {
-  long positions[2]; // Array of desired stepper positions
-  stepperRight.setMaxSpeed(spd);//set right motor speed
-  stepperLeft.setMaxSpeed(spd);//set left motor speed
-  //stepperRight.setSpeed(robot_spd);//set right motor speed
-  //stepperLeft.setSpeed(robot_spd);//set left motor speed
-
-  //stepperRight.setCurrentPosition(0);
-  //stepperLeft.setCurrentPosition(0);
-  positions[0] = stepperRight.currentPosition(); //right motor absolute position
-  positions[1] = stepperLeft.currentPosition()+ rot*1; //left motor absolute position
-  steppers.moveTo(positions);
-
-  //stepperRight.run();
-  //stepperLeft.run();
-  //steppers.runSpeedToPosition();
-  //delay(100);
-  //steppers.run(); //move forward with no blocking
-  runToStop();
+  //runToStop();
 }
 
 void reverse(int rot, int spd) {
     forward(-rot, spd);
 }
 
-//void gotoangle(int angle){
-//  //Serial.println(angle);
-//  
-//  long stepsToTake = angle*9.4;//calculate steps to reach the angle
-//  
-//  if (angle > 0){
-//    stepperRight.move(stepsToTake*1.05);// set steps(right wheel require more distance to achieve right angle)
-//    stepperRight.setMaxSpeed(defaultRightWheelSpeed );
-//    runAtSpeedToPosition(); //run both stepper to set position
-//    runToStop();//run until the robot reaches the target
-//  }else if (angle < 0){
-//    stepperLeft.move(-stepsToTake*1.25); // set steps(left wheel require more distance to achieve right angle)
-//    stepperLeft.setMaxSpeed(defaultRightWheelSpeed);
-//    runAtSpeedToPosition(); //run both stepper to set position
-//    runToStop();//run until the robot reaches the target
-//  }else{
-//    stepperRight.stop();
-//    stepperLeft.stop();
-//  }
-//}
+void gotoangle(int angle){
+  //Serial.println(angle);
+  
+  long stepsToTake = angle*9.4;//calculate steps to reach the angle
+  
+  if (angle > 0){
+    stepperRight.move(stepsToTake*1.05);// set steps(right wheel require more distance to achieve right angle)
+    stepperRight.setMaxSpeed(robot_spd);
+    runAtSpeedToPosition(); //run both stepper to set position
+    runToStop();//run until the robot reaches the target
+  }else if (angle < 0){
+    stepperLeft.move(-stepsToTake*1.25); // set steps(left wheel require more distance to achieve right angle)
+    stepperLeft.setMaxSpeed(robot_spd);
+    runAtSpeedToPosition(); //run both stepper to set position
+    runToStop();//run until the robot reaches the target
+  }else{
+    stepperRight.stop();
+    stepperLeft.stop();
+  }
+}
 
-//void updateState() {
-//  if (IrR == true){
-//    Serial.println(" IrR True");
-//  }
-//
-//  
-//  if (obstacle == false) { //no sensors triggered
-//    state = botStop;
-//    Serial.println("obstacle");
-//  }
-//  else if (obstacle == true) { //front sensors triggered
+void spin(int angle){
+  long stepsToTake = angle*5.1;//calculate steps to reach the angle
+  
+  if (angle > 0){
+    stepperRight.move(stepsToTake);// set steps(right wheel require more distance to achieve right angle)
+    stepperRight.setMaxSpeed(robot_spd);
+    stepperLeft.move(-stepsToTake); // set steps(left wheel require more distance to achieve right angle)
+    stepperLeft.setMaxSpeed(robot_spd);
+    runAtSpeedToPosition(); //run both stepper to set position
+    runToStop();//run until the robot reaches the target
+  }else if (angle < 0){
+    stepperRight.move(stepsToTake);// set steps(right wheel require more distance to achieve right angle)
+    stepperRight.setMaxSpeed(robot_spd);
+    stepperLeft.move(-stepsToTake); // set steps(left wheel require more distance to achieve right angle)
+    stepperLeft.setMaxSpeed(robot_spd);
+    runAtSpeedToPosition(); //run both stepper to set position
+    runToStop();//run until the robot reaches the target
+  }else{
+    stepperRight.stop();
+    stepperLeft.stop();
+  }
+}
+
+
+
+void runToStop ( void ) {
+  int runNow = 1;
+  int rightStopped = 0;
+  int leftStopped = 0;
+
+  while (runNow) {
+    if (!stepperRight.run()) {
+      rightStopped = 1;
+      stepperRight.stop();//stop right motor
+    }
+    if (!stepperLeft.run()) {
+      leftStopped = 1;
+      stepperLeft.stop();//stop ledt motor
+    }
+    if (rightStopped && leftStopped) {
+      runNow = 0;
+    }
+  }
+}
+
+void gotogoal(int x, int y){
+  digitalWrite(redLED, LOW);//turn off red LED
+  digitalWrite(grnLED, HIGH);//turn on green LED
+  digitalWrite(ylwLED, HIGH);//turn on yellow LED
+  float theta = atan2(y,x)*180/PI; //calculate angle
+  int l = sqrt(sq(x)+sq(y)); //calculate distance
+  //Serial.println(l);
+  //Serial.println(theta);
+  spin(theta); //call go to angle to point to final desination
+  forward(one_rotation*3, robot_spd); //call forward to move certain distance
+
+}
+
+void runAtSpeedToPosition() {
+  stepperRight.runSpeedToPosition();
+  stepperLeft.runSpeedToPosition();
+}
+
+void updateState() {
+  if (IrR == true){
+    Serial.println(" IrR True");
+  }
+
+  
+  if (obstacle == false) { //no sensors triggered
+    state = botStop;
+    Serial.println("obstacle");
+  }
+  else if (obstacle == true) { //front sensors triggered
 //    if ((SonarL == true && SonarR == false)||(IrL == false && IrR == true && IrB == false )){
 //      state = goleft;//(SonarR == true && SonarL == false)||
 //      Serial.println("True");
-//    }else if((SonarL == true && SonarR == false)||(IrL == true && IrR == false && IrB == false)){
+//    }else if((SonarL == true && SonarR == false)||()||(IrL == true && IrR == false && IrB == false)){
 //      state = goright;//(SonarL == true && SonarR == false)||
 //    }else if((IrL == false && IrR == false && SonarL == true && SonarR == true && IrB == false)
 //      ||(IrL == true && IrR == true && SonarL == true && SonarR == true && IrB == false)
 //      ||(IrL == true && IrR == true && SonarL == true && SonarR == true && IrB == false)
-//      ||){
+//      ){
 //      state = rev;//(SonarL == true && SonarR == true)||
 //    }else if((IrL == false && IrR == false && SonarL == false && SonarR == false && IrB == true)||(IrL == true && IrR == true && SonarL == false && SonarR == false && IrB == false)){
 //      state = fwd;
 //    }else if (IrL == true && IrR == true && SonarL == true && SonarR == true && IrB == true){
 //      state = botStop;
 //    }
-//
-//    
-//  }//else{
-//   // state = botStop;
-//  //}
-//  
-//  //print flag byte
-//     // Serial.println("\trtSNR\tltSNR\tltIR\trtIR\trearIR\tftIR");
-//     // Serial.print("flag byte: ");
-//     // Serial.println(flag, BIN);
-//  //print state byte
-//     // Serial.println("\twander\trunAway\tcollide\treverse\tforward");
-//     // Serial.print("state byte: ");
-//     //Serial.println(state, BIN);
-//  Serial.println(state);
-//}
 
-void updateSpeed(){
-  spdL = 0;
-  spdR = 0;
+    if((IrF == false && IrL == false && IrR == true && IrB == false )||
+    (IrF == true && IrL == false && IrR == true && IrB == false )||
+    (IrF == false && IrL == false && IrR == true && IrB == true)||
+    (IrF == true && IrL == false && IrR == true && IrB == true)){
+      state = goleft;
+    }else if((IrF == false && IrL == true && IrR == false && IrB == false )||
+    (IrF == true && IrL == true && IrR == false && IrB == false )||
+    (IrF == false && IrL == true && IrR == false && IrB == true)||
+    (IrF == true && IrL == true && IrR == false && IrB == true)||
+    (IrF == true && IrL == false && IrR == false && IrB == true)){
+      state = goright;
+    }else if((IrF == true && IrL == false && IrR == false && IrB == false )||
+    (IrF == true && IrL == true && IrR == true && IrB == false )){
+      state = rev;
+    }else if((IrF == false && IrL == false && IrR == false && IrB == true )||
+    (IrF == false && IrL == true && IrR == true && IrB == false )||
+    (IrF == false && IrL == true && IrR == true && IrB == true)){
+      state = fwd;
+    }else if (IrL == true && IrR == true && SonarL == true && SonarR == true && IrB == true){
+      state = botStop;
+    }
 
-  if (SonarL == true || SonarR == true){
-        dir = -1;
-  }else{
-        dir = 1;
-  }
-  if (obstacle == false) { //no sensors triggered
-    spdL=0;
-    spdR=0;
-    Serial.println("obstacle");
-  }else if (obstacle == true){
-    if ((IrL == true && IrR == true && SonarL == true && SonarR == true && IrB == true)){
-      spdL=0;
-      spdR=0;
-    }else if(SonarR == true && SonarL == true && IrB == true){
-      spdL=-100;
-      spdR=100;
-    }else{
-      
-      if (IrR == true){
-        spdR = spdR+(dir)*(6.5-inirR)*200;
-      }
-      if (IrL == true){
-        spdL = spdL+dir*(6.5-inirR)*200;
-      }
-      if (IrB == true){
-        spdL = spdL+dir*(6.1-inirB)*150;
-        spdR = spdR+dir*(6.1-inirB)*150;
-      }
-      if (SonarL == true && IrB == false){
-        spdL = spdL+dir*(19-cmFL)*50;
-      }
-      if (SonarR == true && IrB == false){
-        spdR = spdR+dir*(19-cmFR)*50;
-      }
-      
+    
+  }//else{
+   // state = botStop;
+  //}
+  
+  //print flag byte
+     // Serial.println("\trtSNR\tltSNR\tltIR\trtIR\trearIR\tftIR");
+     // Serial.print("flag byte: ");
+     // Serial.println(flag, BIN);
+  //print state byte
+     // Serial.println("\twander\trunAway\tcollide\treverse\tforward");
+     // Serial.print("state byte: ");
+     //Serial.println(state, BIN);
+  Serial.println(state);
+}
+
+void Shyfunction(){
+  if (state == botStop){
+    Serial.println("robot stop");
+    stop();
+  }else if (obstacle == true && state == rev){
+    spin(180);
+    forward(one_rotation*5, robot_spd);
+    delay(500);
+    Serial.println("robot reverse");
+    
+  }else if(obstacle == true && state == goleft){
+    spin(90);
+    forward(one_rotation*3, robot_spd);
+    delay(500);
+    Serial.println("robot left");
+  }else if(obstacle == true && state == goright){
+    spin(-90);
+    forward(one_rotation*3, robot_spd);
+    delay(500);
+    Serial.println("robot right");
+  }else if(obstacle == true && state == fwd){
+    forward(one_rotation*5, robot_spd);//*(6.5-inirB)/6);
+    delay(500);
+    Serial.println("robot reverse");
       
     }
-    
+  else{
+    Serial.println("robot stop2");
+    stop();
   }
   
 }
-
-//void Shyfunction(){
-//  if (state == botStop){
-//    Serial.println("robot stop1");
-//    stop();
-//  }else if (obstacle == true && state == rev){
-//    
-//    reverse(one_rotation, robot_spd);
-//    delay(50);
-//    Serial.println("robot reverse");
-//    
-//  }else if(obstacle == true && state == goleft){
-//    turnleft(one_rotation, robot_spd);//*(6.5-inirL)/6);
-//    delay(50);
-//    Serial.println("robot left");
-//  }else if(obstacle == true && state == goright){
-//    turnright(one_rotation, robot_spd);//*(6.5-inirR)/6);
-//    delay(50);
-//    Serial.println("robot right");
-//  }else if(obstacle == true && state == fwd){
-//    forward(one_rotation, robot_spd);//*(6.5-inirB)/6);
-//    delay(50);
-//    Serial.println("robot reverse");
-//      
-//    }
-//  else{
-//    Serial.println("robot stop2");
-//    stop();
-//  }
-//  
-//}
-
-void randomwonder(){
-  if (randomstate == 0){
-    forward(one_rotation, 250);
-    randomstate = random(1,3);
-  }else if(randomstate == 1){
-    turnright(one_rotation, 250);
-    randomstate = 0;
-  }else if(randomstate == 2 ){
-    turnleft( one_rotation, 250);
-    randomstate = 0;
-  }
-}
-
 
 void updateSensors() {
   test_state = !test_state;
@@ -419,11 +410,11 @@ void updateSensors() {
   state = 0;
   obstacle = false;
   updateIR();
-  updateSonar2();
+  //updateSonar2();
   
-  //updateState();
-  updateSpeed();
-  //Serial.println(state);
+  updateState();
+  //updateSpeed();
+  Serial.println(state);
 }
 
 void updateSonar2() {
@@ -512,13 +503,13 @@ void updateIR() {
       Serial.print(inirL); Serial.print("\t");
       Serial.println(inirR);
 
-  //if (inirF <= irThresh){
-  //  obstacle = true;
-  //  IrF = true;
+  if (inirF <= irThresh){
+    obstacle = true;
+    IrF = true;
     //Serial.println("True");
- // }else{
-    //IrF = false;
- //}
+   }else{
+    IrF = false;
+ }
   if (inirB <= irThresh){
     obstacle = true;
     IrB = true;
@@ -537,25 +528,5 @@ void updateIR() {
     Serial.println("True");
   }else{
     IrR = false;
-  }
-}
-
-void runToStop ( void ) {
-  int runNow = 1;
-  int rightStopped = 0;
-  int leftStopped = 0;
-
-  while (runNow) {
-    if (!stepperRight.run()) {
-      rightStopped = 1;
-      stepperRight.stop();//stop right motor
-    }
-    if (!stepperLeft.run()) {
-      leftStopped = 1;
-      stepperLeft.stop();//stop ledt motor
-    }
-    if (rightStopped && leftStopped) {
-      runNow = 0;
-    }
   }
 }
