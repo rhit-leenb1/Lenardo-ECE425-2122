@@ -191,7 +191,7 @@ void runatspeed(){
   stepperLeft.runSpeed();
 }
 
-
+//goforward
 void forward(int rot, int spd) {
   long positions[2]; // Array of desired stepper positions
   stepperRight.setMaxSpeed(spd);//set right motor speed
@@ -212,6 +212,8 @@ void forward(int rot, int spd) {
   //steppers.run(); //move forward with no blocking
   runToStop();
 }
+
+//turn left function
 void turnleft(int rot, int spd) {
   long positions[2]; // Array of desired stepper positions
   stepperRight.setMaxSpeed(spd);//set right motor speed
@@ -233,6 +235,7 @@ void turnleft(int rot, int spd) {
   runToStop();
 }
 
+//turn right function
 void turnright(int rot, int spd) {
   long positions[2]; // Array of desired stepper positions
   stepperRight.setMaxSpeed(spd);//set right motor speed
@@ -254,6 +257,7 @@ void turnright(int rot, int spd) {
   runToStop();
 }
 
+// reverse function
 void reverse(int rot, int spd) {
     forward(-rot, spd);
 }
@@ -322,6 +326,7 @@ void reverse(int rot, int spd) {
 //  Serial.println(state);
 //}
 
+// Use P control to chanbge the speed
 void updateSpeed(){
   spdL = 0;
   spdR = 0;
@@ -345,7 +350,7 @@ void updateSpeed(){
     }else{
       
       if (IrR == true){
-        spdR = spdR+(dir)*(6.5-inirR)*200;
+        spdR = spdR+(dir)*(6.5-inirR)*200;//change wheel speed according to distance
       }
       if (IrL == true){
         spdL = spdL+dir*(6.5-inirR)*200;
@@ -399,6 +404,7 @@ void updateSpeed(){
 //  
 //}
 
+// random wander function
 void randomwonder(){
   if (randomstate == 0){
     forward(one_rotation, 250);
@@ -412,6 +418,7 @@ void randomwonder(){
   }
 }
 
+//Update speed to change the robot moving direction
 
 void updateSensors() {
   test_state = !test_state;
@@ -425,6 +432,8 @@ void updateSensors() {
   updateSpeed();
   //Serial.println(state);
 }
+
+// use Sonar sensors to provide distance information.
 
 void updateSonar2() {
   SonarL = false;
@@ -474,6 +483,8 @@ void updateSonar2() {
     SonarL = false;
   }
 }
+
+// use IR sensors to provide distance information.
 
 void updateIR() {
   //test_state = !test_state;//LED to test the heartbeat of the timer interrupt routine
