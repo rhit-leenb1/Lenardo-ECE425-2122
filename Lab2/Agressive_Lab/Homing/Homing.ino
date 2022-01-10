@@ -56,7 +56,7 @@ int spdL = 0;
 int spdR = 0;
 int dir = 1;
 
-#define irThresh    5 // The IR threshold for presence of an obstacle in ADC value
+#define irThresh    7 // The IR threshold for presence of an obstacle in ADC value
 #define snrThresh   18  // The sonar threshold for presence of an obstacle in cm
 #define snrThreshmid   15  // The sonar midian threshold for presence of an obstacle in cm
 #define snrThreshmin   10  // The sonar minimum threshold for presence of an obstacle in cm
@@ -113,8 +113,18 @@ boolean IrB = false;
 boolean IrL = false;
 boolean IrR = false;
 
-int state = 0;
-int randomstate = 0;
+int state = 0; //define state
+int randomstate = 0; //define random state
+
+int xdis = 6; //homing direction
+int ydis = 0; 
+
+int x = 0; //record move
+int y = 0;
+
+boolean turnedleft = false;
+boolean tuenedright = false;
+
 
 void setup() {
   // put your setup code here, to run once:
@@ -159,7 +169,20 @@ void setup() {
   Serial.begin(baud_rate);//start serial communication in order to debug the software while coding
   Serial.println("Timer Interrupt to Update Sensors......");
  // digitalWrite(redLED,HIGH);
+
+  x = xdis*12/3.375*2.9;
+  y = ydis*12/3.375*2.9;
+  
   delay(2500); //seconds before the robot moves
+  gotogoal(x,y);
+  if (x == 0){
+      x = ydis*12/3.375*2.9;
+      y = xdis*12/3.375*2.9;
+  }
+
+  delay(1000);
+     Serial.println(x); Serial.print("\t");
+     Serial.println(y); Serial.print("\t");
 
 }
 
@@ -168,8 +191,8 @@ void setup() {
 void loop() {
   // put your main code here, to run repeatedly:
    // put your main code here, to run repeatedly:
-  forward(one_rotation, robot_spd);//*(6.5-inirB)/6);
-  delay(5000);
+//  forward(one_rotation, robot_spd);//*(6.5-inirB)/6);
+//  delay(5000);
 //  gotoangle(90);
 //  delay(500);
 //  reverse(one_rotation, robot_spd);
@@ -177,25 +200,51 @@ void loop() {
 //    delay(500);
 //    spin(90);
 //    delay(500);
+//Homing loop
   
-//  if (obstacle == true){
-//    
-//    digitalWrite(grnLED, LOW);//turn off green LED
-//    digitalWrite(ylwLED, HIGH);//turn on yellow LED
-//    Shyfunction();
-//  }else if(obstacle == false){
-//    stop;
-//    //randomwonder();
-//    //digitalWrite(grnLED, HIGH);//turn on green LED
-//    digitalWrite(ylwLED, LOW);//turn on yellow LED
-//  }
+  if (obstacle == true){
+    delay(500);
+    digitalWrite(grnLED, LOW);//turn off green LED
+    digitalWrite(ylwLED, HIGH);//turn on yellow LED
+    Shyfunction();
+  }else if(obstacle == false){
+    //randomwonder(); //random wonder
+    digitalWrite(grnLED, HIGH);//turn on green LED
+    digitalWrite(ylwLED, LOW);//turn on yellow LED
+    if (x!=0){
+      if(x>0){
+        forward(qrtr_rot, robot_spd);
+        x=x-1;
+      }else if(x<0){
+        forward(qrtr_rot, robot_spd);
+        x=x+1;
+      }
+    }else if(x == 0 && y!=0){
+      if(y>0){
+        gotogoal(x,y);
+        //forward(qrtr_rot, robot_spd*2);
+        x=y;
+        y=0;
+      }else if(y<0){
+        gotogoal(x,y);
+        //forward(qrtr_rot, robot_spd*2);
+        x=y;
+        y=0;
+      }
+    }else{
+      stop;
+    }
+  }
+     Serial.println(x); Serial.print("\t");
+     Serial.println(y); Serial.print("\t");
 }
 
+// Stop function
 void stop() {
   stepperRight.stop();
   stepperLeft.stop();
 }
-
+//forward function
 void forward(int rot, int spd) {
 //  long positions[2]; // Array of desired stepper positions
 //  stepperRight.setMaxSpeed(spd);//set right motor speed
@@ -217,11 +266,11 @@ void forward(int rot, int spd) {
   //steppers.run(); //move forward with no blocking
   //runToStop();
 }
-
+//reverse function
 void reverse(int rot, int spd) {
     forward(-rot, spd);
 }
-
+//gotoangle function
 void gotoangle(int angle){
   //Serial.println(angle);
   
@@ -243,6 +292,7 @@ void gotoangle(int angle){
   }
 }
 
+//spin function (for sharp turn)
 void spin(int angle){
   long stepsToTake = angle*5.1;//calculate steps to reach the angle
   
@@ -288,6 +338,7 @@ void runToStop ( void ) {
   }
 }
 
+// go to goal(test homing function)
 void gotogoal(int x, int y){
   digitalWrite(redLED, LOW);//turn off red LED
   digitalWrite(grnLED, HIGH);//turn on green LED
@@ -297,7 +348,8 @@ void gotogoal(int x, int y){
   //Serial.println(l);
   //Serial.println(theta);
   spin(theta); //call go to angle to point to final desination
-  forward(one_rotation*3, robot_spd); //call forward to move certain distance
+  //forward(one_rotation*3, robot_spd); //call forward to move certain distance
+  stop();
 
 }
 
@@ -306,6 +358,7 @@ void runAtSpeedToPosition() {
   stepperLeft.runSpeedToPosition();
 }
 
+// State machine
 void updateState() {
   if (IrR == true){
     Serial.println(" IrR True");
@@ -336,6 +389,7 @@ void updateState() {
     if((IrF == false && IrL == false && IrR == true && IrB == false )||
     (IrF == true && IrL == false && IrR == true && IrB == false )||
     (IrF == false && IrL == false && IrR == true && IrB == true)||
+    (IrF == true && IrL == false && IrR == false && IrB == false )||
     (IrF == true && IrL == false && IrR == true && IrB == true)){
       state = goleft;
     }else if((IrF == false && IrL == true && IrR == false && IrB == false )||
@@ -344,7 +398,7 @@ void updateState() {
     (IrF == true && IrL == true && IrR == false && IrB == true)||
     (IrF == true && IrL == false && IrR == false && IrB == true)){
       state = goright;
-    }else if((IrF == true && IrL == false && IrR == false && IrB == false )||
+    }else if(
     (IrF == true && IrL == true && IrR == true && IrB == false )){
       state = rev;
     }else if((IrF == false && IrL == false && IrR == false && IrB == true )||
@@ -371,28 +425,42 @@ void updateState() {
   Serial.println(state);
 }
 
+// Shy function state change
 void Shyfunction(){
   if (state == botStop){
     Serial.println("robot stop");
     stop();
   }else if (obstacle == true && state == rev){
     spin(180);
-    forward(one_rotation*5, robot_spd);
+    forward(one_rotation*4, robot_spd);
     delay(500);
     Serial.println("robot reverse");
     
   }else if(obstacle == true && state == goleft){
-    spin(90);
-    forward(one_rotation*3, robot_spd);
+    reverse(one_rotation, robot_spd);
     delay(500);
+    spin(90);
+    delay(500);
+    forward(one_rotation*4, robot_spd);
+    delay(500);
+    spin(-90);
+    delay(500);
+    x=x+4;
+    y=y-4*4;
     Serial.println("robot left");
   }else if(obstacle == true && state == goright){
-    spin(-90);
-    forward(one_rotation*3, robot_spd);
+    reverse(one_rotation, robot_spd);
     delay(500);
+    spin(-90);
+    forward(one_rotation*4, robot_spd);
+    spin(90);
+    delay(500);
+    stop();
+    y=y+4*4;
+    x=x+4;
     Serial.println("robot right");
   }else if(obstacle == true && state == fwd){
-    forward(one_rotation*5, robot_spd);//*(6.5-inirB)/6);
+    forward(one_rotation*4, robot_spd);//*(6.5-inirB)/6);
     delay(500);
     Serial.println("robot reverse");
       
@@ -404,6 +472,7 @@ void Shyfunction(){
   
 }
 
+// Sensor data update and update state every time
 void updateSensors() {
   test_state = !test_state;
   digitalWrite(test_led, test_state);
@@ -417,6 +486,7 @@ void updateSensors() {
   Serial.println(state);
 }
 
+// update sonar data
 void updateSonar2() {
   SonarL = false;
   SonarR = false;
@@ -465,6 +535,8 @@ void updateSonar2() {
     SonarL = false;
   }
 }
+
+// update ir data
 
 void updateIR() {
   //test_state = !test_state;//LED to test the heartbeat of the timer interrupt routine
