@@ -56,10 +56,10 @@
 #include <MultiStepper.h>//include multiple stepper motor library
 
 //define pin numbers
-const int rtStepPin = 46; //right stepper motor step pin (pin 52 or non-wireless)
-const int rtDirPin = 53;  // right stepper motor direction pin (no change in pin for non-wireless)
-const int ltStepPin = 44; //left stepper motor step pin (pin 50 for non-wireless)
-const int ltDirPin = 49;  //left stepper motor direction pin (pin 51 for non-wireless)
+const int rtStepPin = 50; //right stepper motor step pin (pin 52 or non-wireless)
+const int rtDirPin = 51;  // right stepper motor direction pin (no change in pin for non-wireless)
+const int ltStepPin = 52; //left stepper motor step pin (pin 50 for non-wireless)
+const int ltDirPin = 53;  //left stepper motor direction pin (pin 51 for non-wireless)
 const int stepTime = 500; //delay time between high and low on step pin
 
 
@@ -114,11 +114,11 @@ void setup()
 void loop()
 {
   //uncomment each function one at a time to see what the code does
-  move1();//call move back and forth function
-  move2();//call move back and forth function with AccelStepper library functions
-  move3();//call move back and forth function with MultiStepper library functions
+  //move1();//call move back and forth function
+  //move2();//call move back and forth function with AccelStepper library functions
+  //move3();//call move back and forth function with MultiStepper library functions
   //move4(); //move to target position with 2 different speeds
-  //move5(); //move continuously with 2 different speeds
+  move5(); //move continuously with 2 different speeds
 }
 
 /*

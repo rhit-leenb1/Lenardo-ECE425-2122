@@ -37,18 +37,18 @@
 
 //define stepper motor pin numbers
 #define stepperEnable 48//stepper enable pin on stepStick
-#define rtStepPin 52    //right stepper motor step pin
-#define rtDirPin 53     // right stepper motor direction pin
-#define ltStepPin 50    //left stepper motor step pin
-#define ltDirPin 51     //left stepper motor direction pin
+#define rtStepPin 50    //right stepper motor step pin
+#define rtDirPin 51     // right stepper motor direction pin
+#define ltStepPin 52    //left stepper motor step pin
+#define ltDirPin 53     //left stepper motor direction pin
 
 //define sensor pin numbers
-#define irFront   A8    //front IR analog pin
+#define irFront   A10    //front IR analog pin
 #define irRear    A9    //back IR analog pin
-#define irRight   A10   //right IR analog pin
+#define irRight   A12   //right IR analog pin
 #define irLeft    A11   //left IR analog pin
-#define snrLeft   A12   //front left sonar 
-#define snrRight  A13   //front right sonar 
+#define snrLeft   A1   //front left sonar 
+#define snrRight  A2   //front right sonar 
 #define button    A15   //pushbutton 
 
 AccelStepper stepperRight(AccelStepper::DRIVER, rtStepPin, rtDirPin); //create instance of right stepper motor object (2 driver pins, low to high transition step pin 52, direction input pin 53 (high means forward)
@@ -481,17 +481,17 @@ void updateSonar2() {
 
   ///// print sonar data
   if ((srRightAvg > 0 && srRightAvg < 20)) { //filter out garbage readings
-    //    Serial.print("right sonar current = \t"); Serial.print(rs_curr);
-    //    Serial.print("\tright sonar cerror = \t"); Serial.print(rs_cerror);
-    //    Serial.print("\tright sonar derror = \t"); Serial.print(rs_derror);
-    //    Serial.print("\tright sonar perror = \t"); Serial.println(rs_perror);
+        Serial.print("right sonar current = \t"); Serial.print(rs_curr);
+        Serial.print("\tright sonar cerror = \t"); Serial.print(rs_cerror);
+        Serial.print("\tright sonar derror = \t"); Serial.print(rs_derror);
+        Serial.print("\tright sonar perror = \t"); Serial.println(rs_perror);
   }
 
   if ((srRightAvg > 0 && srRightAvg < 20)) { //filter out garbage readings
-    //    Serial.print("left sonar current = \t"); Serial.print(ls_curr);
-    //    Serial.print("\tleft sonar cerror = \t"); Serial.print(ls_cerror);
-    //    Serial.print("\tleft sonar derror = \t"); Serial.print(ls_derror);
-    //    Serial.print("\tleft sonar perror = \t"); Serial.println(ls_perror);
+        Serial.print("left sonar current = \t"); Serial.print(ls_curr);
+        Serial.print("\tleft sonar cerror = \t"); Serial.print(ls_cerror);
+        Serial.print("\tleft sonar derror = \t"); Serial.print(ls_derror);
+        Serial.print("\tleft sonar perror = \t"); Serial.println(ls_perror);
   }
 }
 
@@ -658,4 +658,3 @@ void runToStop ( void ) {
       runNow = 0;
   }
 }
-
