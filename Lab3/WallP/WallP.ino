@@ -308,7 +308,7 @@ void wallP(){
           spdR=spdR+kp*ri_perror+kd*ri_derror;
           spdL=spdL-kp*ri_perror+kd*ri_derror;
           turns=turns+1;
-    }else if((li_cerror==0)){
+    }else if((ri_cerror==0)){
       spdR=spdR+kd*(ri_curr-6)/2;
       turns = 0;
   }
