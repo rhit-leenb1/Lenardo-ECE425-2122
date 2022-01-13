@@ -254,7 +254,7 @@ void loop() {
     digitalWrite(grnLED, HIGH);
     digitalWrite(ylwLED, LOW);
     digitalWrite(redLED, HIGH);
-    forward(-100,200);
+    forward(-800,200);
     spin(180);
     forward(100,200);
     state = prevState;
@@ -263,18 +263,18 @@ void loop() {
     digitalWrite(ylwLED, LOW);
     digitalWrite(redLED, LOW);
     if (prevState == fright){
-      spin(-90);
+      spin(-95);
     } else {
-      spin(90);
+      spin(95);
     }
     forward(800,200);
-    updateIR();
+    //updateIR();
     if (IrL == false && prevState == fleft){
-      spin(90);
-      forward(1800,200);
+      spin(95);
+      forward(1600,200);
     } else if (IrR == false && prevState == fright){
-      spin(-90);
-      forward(1800,200);
+      spin(-95);
+      forward(1600,200);
     }
     
     state = prevState;
