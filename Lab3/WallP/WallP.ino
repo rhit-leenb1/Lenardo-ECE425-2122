@@ -312,6 +312,7 @@ void wallP(){
       spdR=spdR+kd*(ri_curr-6)/2;
       turns = 0;
   }
+  }
   Serial.println(spdR);
   Serial.println(spdL);
   
