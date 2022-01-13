@@ -58,7 +58,7 @@ NewPing sonarRt(snrRight, snrRight);  //create an instance of the right sonar
 #define snrMax   15               // sonar maximum threshold for wall (use a deadband of 4 to 6 inches)
 
 
-#define irThresh    13 // The IR threshold for presence of an obstacle in ADC value
+#define irThresh    14 // The IR threshold for presence of an obstacle in ADC value
 #define irMax    7
 #define irMin    5
 #define snrThresh   60  // The sonar threshold for presence of an obstacle in cm
@@ -221,12 +221,7 @@ void loop() {
   }
   if (state == fright || state == fleft){
     runAtSpeed();
-  } else {
-    stepperRight.stop();
-    stepperLeft.stop();
-  }
-
-  if (state ==center){
+  } else if (state ==center){
     center();
     runAtSpeed();
     digitalWrite(grnLED, HIGH);
@@ -268,6 +263,15 @@ void loop() {
       spin(90);
     }
     forward(1800,200);
+    updateIR();
+    if (IrL == false && prevState == fleft){
+      spin(90);
+      forward(1800,200);
+    } else if (IrR == false && prevState == fright){
+      spin(-90);
+      forward(1800,200);
+    }
+    
     state = prevState;
   } else if(state == runAway){
     digitalWrite(grnLED, HIGH);
@@ -276,7 +280,7 @@ void loop() {
     stepperRight.stop();
     stepperLeft.stop();
     
-    forward(-300,200);
+    forward(-800,200);
     spin(90);
   }
     
@@ -396,6 +400,9 @@ void updateState() {
     }else if(((IrL == false && IrR == false && IrF == false)||(IrL == false && IrR == false && IrF == false)) && (prevState == fright || prevState == fleft)){
       state = outsidecorner;
       obstacle = false;
+    }else if(IrF == true && (IrL == false && IrR == false)){
+      state = runAway;
+      obstacle = true;
     }
   }
 //        Serial.print("IrL = \t"); Serial.print(IrL);
@@ -404,8 +411,7 @@ void updateState() {
 //        Serial.print("SonarR = \t"); Serial.println(SonarR);
 //        Serial.print("SonarL = \t"); Serial.println(SonarL);
 //
-state = fright;
-  //printState();
+  printState();
 }
 
 void printState(){
@@ -460,16 +466,16 @@ void wallP(){
     digitalWrite(grnLED, HIGH);
     digitalWrite(ylwLED, HIGH);
     
-    if ((li_cerror>0)&&(turns<=10)){
+    if ((li_cerror>0)&&(turns<=13)){
           spdL=spdL+kp*li_perror+kd*li_derror;
           spdR=spdR-kp*li_perror+kd*li_derror;
           turns=turns+1;
           digitalWrite(grnLED, LOW);
           digitalWrite(ylwLED, HIGH);
           digitalWrite(redLED, LOW);
-    }else if((li_cerror<0)&&(turns<=10)){
-          spdL=spdL+kp*li_perror+kd*li_derror;
-          spdR=spdR-kp*li_perror+kd*li_derror;
+    }else if((li_cerror<0)&&(turns<=13)){
+          spdL=spdL+kp*1.1*li_perror+kd*li_derror;
+          spdR=spdR-kp*1.1*li_perror+kd*li_derror;
           turns=turns+1;
           digitalWrite(grnLED, LOW);
           digitalWrite(ylwLED, LOW);
@@ -492,8 +498,8 @@ void wallP(){
           digitalWrite(ylwLED, HIGH);
           digitalWrite(redLED, LOW);
     }else if((ri_cerror<0)&&(turns<=10)){
-          spdR=spdR+kp*1.2*ri_perror+kd*ri_derror;
-          spdL=spdL-kp*1.2*ri_perror+kd*ri_derror;
+          spdR=spdR+kp*1.3*ri_perror+kd*ri_derror;
+          spdL=spdL-kp*1.3*ri_perror+kd*ri_derror;
           turns=turns+1;
           digitalWrite(grnLED, LOW);
           digitalWrite(ylwLED, LOW);
@@ -505,8 +511,8 @@ void wallP(){
   
   
   }
-  Serial.println(spdR);
-  Serial.println(spdL);
+//  Serial.println(spdR);
+//  Serial.println(spdL);
 }
 
 void center(){
@@ -632,11 +638,11 @@ void updateIR() {
   }
   
   //  print IR data
-      Serial.println("frontIR\tbackIR\tleftIR\trightIR");
-      Serial.print(inirF); Serial.print("\t");
-      Serial.print(inirB); Serial.print("\t");
-      Serial.print(inirL); Serial.print("\t");
-      Serial.println(inirR);
+//      Serial.println("frontIR\tbackIR\tleftIR\trightIR");
+//      Serial.print(inirF); Serial.print("\t");
+//      Serial.print(inirB); Serial.print("\t");
+//      Serial.print(inirL); Serial.print("\t");
+//      Serial.println(inirR);
 
   if (inirF <= irMax){
     obstacle = true;
@@ -686,19 +692,19 @@ void updateIR() {
   li_derror = li_cerror - li_perror; //calculate change in error
   li_perror = li_cerror;                //log reading as previous error
 
-  if (inirR > 0 && inirR < 1000) { //filter out garbage readings
-        Serial.print("right IR current = \t"); Serial.print(ri_curr);
-        Serial.print("\tright IR cerror = \t"); Serial.println(ri_cerror);
-        Serial.print("\tright IR derror = \t"); Serial.print(ri_derror);
-        Serial.print("\tright IR perror = \t"); Serial.println(ri_perror);
-  }
-
-  if (inirL > 0 && inirL < 1000) { //filter out garbage readings
-        Serial.print("left IR current = \t"); Serial.print(li_curr);
-        Serial.print("\tleft IR cerror = \t"); Serial.println(li_cerror);
-        Serial.print("\tleft IR derror = \t"); Serial.print(li_derror);
-        Serial.print("\tleft IR perror = \t"); Serial.println(li_perror);
-  }
+//  if (inirR > 0 && inirR < 1000) { //filter out garbage readings
+//        Serial.print("right IR current = \t"); Serial.print(ri_curr);
+//        Serial.print("\tright IR cerror = \t"); Serial.println(ri_cerror);
+//        Serial.print("\tright IR derror = \t"); Serial.print(ri_derror);
+//        Serial.print("\tright IR perror = \t"); Serial.println(ri_perror);
+//  }
+//
+//  if (inirL > 0 && inirL < 1000) { //filter out garbage readings
+//        Serial.print("left IR current = \t"); Serial.print(li_curr);
+//        Serial.print("\tleft IR cerror = \t"); Serial.println(li_cerror);
+//        Serial.print("\tleft IR derror = \t"); Serial.print(li_derror);
+//        Serial.print("\tleft IR perror = \t"); Serial.println(li_perror);
+//  }
 
   
 }
