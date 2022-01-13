@@ -58,7 +58,7 @@ NewPing sonarRt(snrRight, snrRight);  //create an instance of the right sonar
 #define snrMax   15               // sonar maximum threshold for wall (use a deadband of 4 to 6 inches)
 
 
-#define irThresh    13 // The IR threshold for presence of an obstacle in ADC value
+#define irThresh    14 // The IR threshold for presence of an obstacle in ADC value
 #define irMax    7
 #define irMin    5
 #define snrThresh   60  // The sonar threshold for presence of an obstacle in cm
@@ -121,6 +121,7 @@ boolean obL = false;
 boolean obR = false;
 
 int state = 0; //define state
+int prevState = 0; //previous state
 
 int randomstate = 0; //define random state
 
@@ -212,37 +213,196 @@ void setup() {
 }
 
 void loop() {
-  // put your main code here, to run repeatedly:
-  runAtSpeed();
+  if (state == wander){
+    randomwonder();
+    digitalWrite(grnLED, HIGH);
+    digitalWrite(ylwLED, LOW);
+    digitalWrite(redLED, LOW);
+  }
+  if (state == fright || state == fleft){
+    runAtSpeed();
+  } else if (state ==center){
+    center();
+    runAtSpeed();
+    digitalWrite(grnLED, HIGH);
+    digitalWrite(ylwLED, HIGH);
+    digitalWrite(redLED, HIGH);
+  } else {
+    stepperRight.stop();
+    stepperLeft.stop();
+  }
+
+  
+  if (state == Insidecorner){
+    if (prevState == fright){
+      spin(-45);
+      forward(-300,200);
+      spin(130);
+    } else {
+      spin(45);
+      forward(-200,200);
+      spin(-130);
+    }
+    state = prevState;
+      
+  } else if (state == endhall){
+    digitalWrite(grnLED, HIGH);
+    digitalWrite(ylwLED, LOW);
+    digitalWrite(redLED, HIGH);
+    forward(-100,200);
+    spin(180);
+    forward(100,200);
+    state = prevState;
+  } else if (state == outsidecorner){
+    digitalWrite(grnLED, LOW);
+    digitalWrite(ylwLED, LOW);
+    digitalWrite(redLED, LOW);
+    if (prevState == fright){
+      spin(-90);
+    } else {
+      spin(90);
+    }
+    forward(800,200);
+    updateIR();
+    if (IrL == false && prevState == fleft){
+      spin(90);
+      forward(1800,200);
+    } else if (IrR == false && prevState == fright){
+      spin(-90);
+      forward(1800,200);
+    }
+    
+    state = prevState;
+  } else if(state == runAway){
+    digitalWrite(grnLED, HIGH);
+    digitalWrite(ylwLED, LOW);
+    digitalWrite(redLED, HIGH);
+    stepperRight.stop();
+    stepperLeft.stop();
+    
+    forward(-800,200);
+    spin(90);
+  }
+    
+
   //Serial.println("run");
+}
+
+// random wander function
+void randomwonder(){
+  if (randomstate == 0){
+    forward(800, 250);
+    randomstate = random(1,3);
+  }else if(randomstate == 1){
+    spin(15);
+    randomstate = 0;
+  }else if(randomstate == 2 ){
+    spin(-15);
+    randomstate = 0;
+  }
 }
 
 void runAtSpeed () {
   stepperRight.setSpeed(spdR);
   stepperLeft.setSpeed(spdL);
- stepperRight.runSpeed();
- stepperLeft.runSpeed(); 
+  stepperRight.runSpeed();
+  stepperLeft.runSpeed(); 
   
 }
 
-void updateState() {
+void spin(int angle){
+  long stepsToTake = angle*5.1;//calculate steps to reach the angle
+  
+  if (angle > 0){
+    stepperRight.move(stepsToTake);// set steps(right wheel require more distance to achieve right angle)
+    stepperRight.setMaxSpeed(robot_spd);
+    stepperLeft.move(-stepsToTake); // set steps(left wheel require more distance to achieve right angle)
+    stepperLeft.setMaxSpeed(robot_spd);
+    runAtSpeedToPosition();
+    runToStop();//run until the robot reaches the target
+  }else if (angle < 0){
+    stepperRight.move(stepsToTake);// set steps(right wheel require more distance to achieve right angle)
+    stepperRight.setMaxSpeed(robot_spd);
+    stepperLeft.move(-stepsToTake); // set steps(left wheel require more distance to achieve right angle)
+    stepperLeft.setMaxSpeed(robot_spd);
+    runAtSpeedToPosition();
+    runToStop();//run until the robot reaches the target
+  }else{
+    stepperRight.stop();
+    stepperLeft.stop();
+  }
+}
 
+void runAtSpeedToPosition() {
+  stepperRight.runSpeedToPosition();
+  stepperLeft.runSpeedToPosition();
+}
+
+void runToStop ( void ) {
+  int runNow = 1;
+  int rightStopped = 0;
+  int leftStopped = 0;
+
+  while (runNow) {
+    if (!stepperRight.run()) {
+      rightStopped = 1;
+      stepperRight.stop();//stop right motor
+    }
+    if (!stepperLeft.run()) {
+      leftStopped = 1;
+      stepperLeft.stop();//stop ledt motor
+    }
+    if (rightStopped && leftStopped) {
+      runNow = 0;
+    }
+  }
+}
+
+void forward(int rot, int spd) {
+//  long positions[2]; // Array of desired stepper positions
+//  stepperRight.setMaxSpeed(spd);//set right motor speed
+//  stepperLeft.setMaxSpeed(spd);//set left motor speed
+//  positions[0] = stepperRight.currentPosition() + rot*1; //right motor absolute position
+//  positions[1] = stepperLeft.currentPosition() + rot*1; //left motor absolute position
+//  steppers.moveTo(positions);
+  stepperRight.move(rot);//move one full rotation forward relative to current position
+  stepperLeft.move(rot);//move one full rotation forward relative to current position
+  stepperRight.setMaxSpeed(spd);//set right motor speed
+  stepperLeft.setMaxSpeed(spd);//set left motor speed
+  runAtSpeedToPosition(); //run both stepper to set position
+  runToStop();//run until the robot reaches the target
+
+  //stepperRight.run();
+  //stepperLeft.run();
+  //steppers.runSpeedToPosition();
+  //delay(100);
+  //steppers.run(); //move forward with no blocking
+  //runToStop();
+}
+
+void updateState() {
+  prevState = state;
+
+  
   if (obstacle == false) { //no sensors triggered
     state = wander;
-    Serial.println("wander");
   }  else if (obstacle == true) {
-    if(IrR == true && IrL == false && IrF == false && SonarR == true && SonarL == false){
+    if(IrR == true && IrL == false && IrF == false){
       state = fright;
-    }else if(IrL == true && IrR == false && IrF == false && SonarR == false && SonarL == true){
+    }else if(IrL == true && IrR == false && IrF == false){
       state = fleft;
-    }else if(IrL == true && IrR == true && IrF == false && SonarR == true && SonarL == true){
+    }else if(IrL == true && IrR == true && IrF == false){
       state = fcenter;
-    }else if((IrL == true && IrR == false && IrF == true && SonarR == false && SonarL == true)||(IrL == false && IrR == true && IrF == true && SonarR == true && SonarL == false)){
+    }else if(((IrL == true && IrR == false && IrF == true)||(IrL == false && IrR == true && IrF == true)) && (prevState == fright || prevState == fleft)){
       state = Insidecorner;
-    }else if(IrL == true && IrR == true && IrF == true && SonarR == true && SonarL == true){
+    }else if((IrL == true && IrR == true && IrF == true) && (prevState == fright || prevState == fleft)){
       state = endhall;
-    }else if((IrL == true && IrR == false && IrF == false && SonarR ==false && SonarL == false)||(IrL == false && IrR == true && IrF == false && SonarR == false && SonarL == false)){
+    }else if(((IrL == false && IrR == false && IrF == false)||(IrL == false && IrR == false && IrF == false)) && (prevState == fright || prevState == fleft)){
       state = outsidecorner;
+      obstacle = false;
+    }else if(IrF == true && (IrL == false && IrR == false)){
+      state = runAway;
+      obstacle = true;
     }
   }
 //        Serial.print("IrL = \t"); Serial.print(IrL);
@@ -250,9 +410,28 @@ void updateState() {
 //        Serial.print("IrF = \t"); Serial.print(IrF);
 //        Serial.print("SonarR = \t"); Serial.println(SonarR);
 //        Serial.print("SonarL = \t"); Serial.println(SonarL);
+//
+  printState();
+}
 
-
-  //Serial.println(state);
+void printState(){
+  if (state == wander){
+    Serial.println("wander");
+  } else if (state == fright){
+    Serial.println("fright");
+  } else if (state ==  fleft){
+    Serial.println("fleft");
+  } else if (state == fcenter){
+    Serial.println("fcenter");
+  } else if (state == Insidecorner){
+    Serial.println("Insidecorner");
+  } else if (state == endhall){
+    Serial.println("endhall");
+  } else if (state == outsidecorner){
+    Serial.println("outsidecorner");
+  } else {
+    Serial.println("Unknown state");
+  }
 }
 
 void wallfollow(){
@@ -262,20 +441,19 @@ void wallfollow(){
 void updateSensors() {
   test_state = !test_state;
   digitalWrite(test_led, test_state);
-  state = 0;
-  obstacle = false;
+//  state = 0;
+//  obstacle = false;
   updateIR();
   updateSonar2();
 
   //state = fleft;
   
   updateError();
-  //updateState();
-  state = fleft;
+  updateState();
+  //prevState = fright;
+  //state = Insidecorner;
   //updateSpeed();
   wallP();
-
-  Serial.println(state);
 }
 
 void wallP(){
@@ -285,14 +463,24 @@ void wallP(){
   kd=10;
 
   if ((state == fleft)){
-    if ((li_cerror>0)&&(turns<=10)){
+    digitalWrite(grnLED, HIGH);
+    digitalWrite(ylwLED, HIGH);
+    
+    if ((li_cerror>0)&&(turns<=13)){
           spdL=spdL+kp*li_perror+kd*li_derror;
           spdR=spdR-kp*li_perror+kd*li_derror;
           turns=turns+1;
-    }else if((li_cerror<0)&&(turns<=10)){
-          spdL=spdL+kp*li_perror+kd*li_derror;
-          spdR=spdR-kp*li_perror+kd*li_derror;
+          digitalWrite(grnLED, LOW);
+          digitalWrite(ylwLED, HIGH);
+          digitalWrite(redLED, LOW);
+    }else if((li_cerror<0)&&(turns<=13)){
+          spdL=spdL+kp*1.1*li_perror+kd*li_derror;
+          spdR=spdR-kp*1.1*li_perror+kd*li_derror;
           turns=turns+1;
+          digitalWrite(grnLED, LOW);
+          digitalWrite(ylwLED, LOW);
+          digitalWrite(redLED, HIGH);
+          
     }else if((li_cerror==0)){
       spdL=spdL+kd*(li_curr-6)/2;
       turns = 0;
@@ -300,22 +488,31 @@ void wallP(){
     }
 
   }else if(state == fright){
+    digitalWrite(redLED, HIGH);
+    digitalWrite(ylwLED, HIGH);
     if ((ri_cerror>0)&&(turns<=10)){
-          spdR=spdR+kp*ri_perror+kd*ri_derror;
-          spdL=spdL-kp*ri_perror+kd*ri_derror;
+          spdR=spdR+kp*1.2*ri_perror+kd*ri_derror;
+          spdL=spdL-kp*1.2*ri_perror+kd*ri_derror;
           turns=turns+1;
+          digitalWrite(grnLED, LOW);
+          digitalWrite(ylwLED, HIGH);
+          digitalWrite(redLED, LOW);
     }else if((ri_cerror<0)&&(turns<=10)){
-          spdR=spdR+kp*ri_perror+kd*ri_derror;
-          spdL=spdL-kp*ri_perror+kd*ri_derror;
+          spdR=spdR+kp*1.3*ri_perror+kd*ri_derror;
+          spdL=spdL-kp*1.3*ri_perror+kd*ri_derror;
           turns=turns+1;
+          digitalWrite(grnLED, LOW);
+          digitalWrite(ylwLED, LOW);
+          digitalWrite(redLED, HIGH);
     }else if((ri_cerror==0)){
       spdR=spdR+kd*(ri_curr-6)/2;
       turns = 0;
-  }
-  }
-  Serial.println(spdR);
-  Serial.println(spdL);
+    }
   
+  
+  }
+//  Serial.println(spdR);
+//  Serial.println(spdL);
 }
 
 void center(){
@@ -325,6 +522,7 @@ void center(){
   kd=10;
   spdR=spdR+kp*derror+kd*ri_derror;
   spdL=spdL-kp*derror+kd*ri_derror;
+
 }
 
 void inwall(){
@@ -364,9 +562,9 @@ void updateSonar2() {
   
   cmFL = srLeftAvg;
   //  print sonar data
-      Serial.println("leftSNR\trightSNR");
-      Serial.print(cmFL); Serial.print("\t");
-      Serial.println(cmFR);
+//      Serial.println("leftSNR\trightSNR");
+//      Serial.print(cmFL); Serial.print("\t");
+//      Serial.println(cmFR);
   if (cmFR < snrThresh){
     //bitSet(flag, obFRight);//set the front right obstacle
     //Serial.println(right);
@@ -440,11 +638,11 @@ void updateIR() {
   }
   
   //  print IR data
-      Serial.println("frontIR\tbackIR\tleftIR\trightIR");
-      Serial.print(inirF); Serial.print("\t");
-      Serial.print(inirB); Serial.print("\t");
-      Serial.print(inirL); Serial.print("\t");
-      Serial.println(inirR);
+//      Serial.println("frontIR\tbackIR\tleftIR\trightIR");
+//      Serial.print(inirF); Serial.print("\t");
+//      Serial.print(inirB); Serial.print("\t");
+//      Serial.print(inirL); Serial.print("\t");
+//      Serial.println(inirR);
 
   if (inirF <= irMax){
     obstacle = true;
@@ -500,7 +698,7 @@ void updateIR() {
 //        Serial.print("\tright IR derror = \t"); Serial.print(ri_derror);
 //        Serial.print("\tright IR perror = \t"); Serial.println(ri_perror);
 //  }
-
+//
 //  if (inirL > 0 && inirL < 1000) { //filter out garbage readings
 //        Serial.print("left IR current = \t"); Serial.print(li_curr);
 //        Serial.print("\tleft IR cerror = \t"); Serial.println(li_cerror);
@@ -516,6 +714,6 @@ void updateError() {
   right_derror = rs_cerror*0.39  - ri_cerror; //difference between right front and back sensor, use threshold for robot mostly parallel to wall
   //derror = ls_cerror - rs_cerror;//use sonar data for difference error
   derror = li_cerror - ri_cerror; //use IR data for difference error
-    Serial.print("left derror\t"); Serial.print(left_derror);
-    Serial.print("\right derror\t"); Serial.println(right_derror);
+//    Serial.print("left derror\t"); Serial.print(left_derror);
+//    Serial.print("\right derror\t"); Serial.println(right_derror);
 }
