@@ -58,7 +58,7 @@ NewPing sonarRt(snrRight, snrRight);  //create an instance of the right sonar
 #define snrMax   15               // sonar maximum threshold for wall (use a deadband of 4 to 6 inches)
 
 
-#define irThresh    14 // The IR threshold for presence of an obstacle in ADC value
+#define irThresh    13 // The IR threshold for presence of an obstacle in ADC value
 #define irMax    7
 #define irMin    5
 #define snrThresh   60  // The sonar threshold for presence of an obstacle in cm
@@ -128,6 +128,9 @@ int randomstate = 0; //define random state
 boolean turnedleft = false;
 boolean tuenedright = false;
 
+int Vlefts = 0;
+int Vrights = 0;
+
 
 float ls_curr;    //left sonar current reading
 float li_curr;    //left ir current reading
@@ -152,6 +155,7 @@ float left_derror;   //difference between left front and back sensor, this may b
 float right_derror;  //difference between right front and back sensor, this may be useful for adjusting the turn angle
 
 float derror;       //difference between left and right error to center robot in the hallway
+float dserror;       //difference between left and right error to center robot in the hallway
 
 int spdL = 0;
 int spdR = 0;
@@ -160,6 +164,7 @@ int kp;
 int kd;
 
 int turns = 0;
+int cturns = 0;
 
 boolean leftwall = false;
 boolean rightwall = false;
@@ -220,10 +225,10 @@ void loop() {
     digitalWrite(redLED, LOW);
   }
   if (state == fright || state == fleft){
-    runAtSpeed();
-  } else if (state ==center){
-    center();
-    runAtSpeed();
+    runAtSpeed(spdR,spdL);
+  } else if (state == fcenter){
+
+    runAtSpeed(Vrights,Vlefts);
     digitalWrite(grnLED, HIGH);
     digitalWrite(ylwLED, HIGH);
     digitalWrite(redLED, HIGH);
@@ -302,9 +307,9 @@ void randomwonder(){
   }
 }
 
-void runAtSpeed () {
-  stepperRight.setSpeed(spdR);
-  stepperLeft.setSpeed(spdL);
+void runAtSpeed (int Rspd,int Lspd) {
+  stepperRight.setSpeed(Rspd);
+  stepperLeft.setSpeed(Lspd);
   stepperRight.runSpeed();
   stepperLeft.runSpeed(); 
   
@@ -395,7 +400,7 @@ void updateState() {
       state = fcenter;
     }else if(((IrL == true && IrR == false && IrF == true)||(IrL == false && IrR == true && IrF == true)) && (prevState == fright || prevState == fleft)){
       state = Insidecorner;
-    }else if((IrL == true && IrR == true && IrF == true) && (prevState == fright || prevState == fleft)){
+    }else if((IrL == true && IrR == true && IrF == true) && (prevState == fcenter)){
       state = endhall;
     }else if(((IrL == false && IrR == false && IrF == false)||(IrL == false && IrR == false && IrF == false)) && (prevState == fright || prevState == fleft)){
       state = outsidecorner;
@@ -434,9 +439,6 @@ void printState(){
   }
 }
 
-void wallfollow(){
-  
-}
 
 void updateSensors() {
   test_state = !test_state;
@@ -445,6 +447,7 @@ void updateSensors() {
 //  obstacle = false;
   updateIR();
   updateSonar2();
+      center();
 
   //state = fleft;
   
@@ -516,18 +519,31 @@ void wallP(){
 }
 
 void center(){
-  spdL=200;
-  spdR=200;
-  kp=10;
+  Vlefts=200;
+  Vrights=200;
+  kp=4;
   kd=10;
-  spdR=spdR+kp*derror+kd*ri_derror;
-  spdL=spdL-kp*derror+kd*ri_derror;
+    Vrights=Vrights-kp*dserror+kd*rs_derror;
+    Vlefts=Vlefts+kp*dserror+kd*rs_derror;
+//  if (dserror>=5 && cturns<=30){
+//      spdR=spdR-kp*dserror+kd*ri_derror;
+//    spdL=spdL+kp*dserror+kd*ri_derror;
+//    cturns = cturns+1;
+//  }else if(dserror<=-5 && cturns<=30){
+//      spdR=spdR-kp*dserror+kd*ri_derror;
+//    spdL=spdL+kp*dserror+kd*ri_derror;
+//    cturns = cturns+1;
+//  }else if(dserror>-5 && dserror<5){
+//    cturns = 0;
+//    spdR=spdR-kp*dserror*0.5;
+//    spdL=spdL+kp*dserror*0.5;
+//  }
+
+   Serial.println(Vrights);
+   Serial.println(Vlefts);
 
 }
 
-void inwall(){
-  
-}
 
 void updateSonar2() {
   SonarL = false;
@@ -714,6 +730,8 @@ void updateError() {
   right_derror = rs_cerror*0.39  - ri_cerror; //difference between right front and back sensor, use threshold for robot mostly parallel to wall
   //derror = ls_cerror - rs_cerror;//use sonar data for difference error
   derror = li_cerror - ri_cerror; //use IR data for difference error
+  dserror = -(ls_cerror - rs_cerror);
 //    Serial.print("left derror\t"); Serial.print(left_derror);
+   Serial.print("derror\t"); Serial.print(dserror);
 //    Serial.print("\right derror\t"); Serial.println(right_derror);
 }
