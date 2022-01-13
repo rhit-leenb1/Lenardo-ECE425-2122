@@ -160,6 +160,9 @@ int kd;
 
 int turns = 0;
 
+boolean leftwall = false;
+boolean rightwall = false;
+
 void setup() {
   // put your setup code here, to run once:
   // put your setup code here, to run once:
@@ -204,8 +207,8 @@ void setup() {
   Serial.begin(baud_rate);//start serial communication in order to debug the software while coding
   Serial.println("Timer Interrupt to Update Sensors......");
  // digitalWrite(redLED,HIGH);
- stepperRight.setAcceleration(100);
- stepperLeft.setAcceleration(100);
+ //stepperRight.setAcceleration(100);
+ //stepperLeft.setAcceleration(100);
 }
 
 void loop() {
@@ -297,10 +300,33 @@ void wallP(){
     }
 
   }else if(state == fright){
-    spdR=spdR+kp*ri_cerror;
+    if ((ri_cerror>0)&&(turns<=10)){
+          spdR=spdR+kp*ri_perror+kd*ri_derror;
+          spdL=spdL-kp*ri_perror+kd*ri_derror;
+          turns=turns+1;
+    }else if((ri_cerror<0)&&(turns<=10)){
+          spdR=spdR+kp*ri_perror+kd*ri_derror;
+          spdL=spdL-kp*ri_perror+kd*ri_derror;
+          turns=turns+1;
+    }else if((li_cerror==0)){
+      spdR=spdR+kd*(ri_curr-6)/2;
+      turns = 0;
   }
   Serial.println(spdR);
   Serial.println(spdL);
+  
+}
+
+void center(){
+  spdL=200;
+  spdR=200;
+  kp=10;
+  kd=10;
+  spdR=spdR+kp*derror+kd*ri_derror;
+  spdL=spdL-kp*derror+kd*ri_derror;
+}
+
+void inwall(){
   
 }
 
@@ -419,7 +445,7 @@ void updateIR() {
       Serial.print(inirL); Serial.print("\t");
       Serial.println(inirR);
 
-  if (inirF <= irThresh){
+  if (inirF <= irMax){
     obstacle = true;
     IrF = true;
     //Serial.println("True");
