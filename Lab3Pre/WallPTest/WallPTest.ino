@@ -137,14 +137,14 @@ float rs_curr;    //right sonar current reading
 float ri_curr;    //right ir current reading
 
 float ls_prev = 0;    //left sonar previous error
-float li_prev = 0;    //left ir previous error
+float li_prev = 7;    //left ir previous error
 float rs_prev = 0;    //right sonar previous error
-float ri_prev = 0;    //right ir previous error
+float ri_prev = 7;    //right ir previous error
 
-float ls_lsdot;    //left sonar current error
-float li_lidot;    //left ir current error
-float rs_rsdot;    //right sonar current error
-float ri_ridot;    //right ir current error
+float ls_dot;    //left sonar current error
+float li_dot;    //left ir current error
+float rs_dot;    //right sonar current error
+float ri_dot;    //right ir current error
 
 float ls_derror;  //left sonar delta error
 float li_derror;  //left ir delta error
@@ -156,8 +156,8 @@ float right_derror;  //difference between right front and back sensor, this may 
 
 float derror;       //difference between left and right error to center robot in the hallway
 
-int spdL = 0;
-int spdR = 0;
+int spdL = 100;
+int spdR = 100;
 
 int kp;
 int kd;
@@ -388,7 +388,7 @@ void updateState() {
 
   if (state == wander){
     if (inirF < irMax){
-        state = avoidObstacle;
+        state = runAway;
     }
     if(inirL < irMax && inirR < irMax){
       state = fcenter;
@@ -409,7 +409,7 @@ void updateState() {
 
   
   if (obstacle == false) { //no sensors triggered
-    state = wander;
+    //state = wander;
   }  else if (obstacle == true) {
     if(IrR == true && IrL == false && IrF == false){
       state = fright;
@@ -468,7 +468,7 @@ void updateSensors() {
 //  state = 0;
 //  obstacle = false;
   updateIR();
-  updateSonar2();
+//  updateSonar2();
 
   //state = fleft;
   
@@ -497,8 +497,8 @@ void wallP(){
       digitalWrite(ylwLED, HIGH);
       digitalWrite(redLED, LOW);
     }else if(li_curr > irMax){
-      spdL=spdL+kp*(irMax-li_curr)+kd*(0-li_dot);
-      spdR=spdR-kp*(irMax-li_curr)+kd*(0-li_dot);
+      spdL=spdL-kp*(irMax-li_curr)+kd*(0-li_dot);
+      spdR=spdR+kp*(irMax-li_curr)+kd*(0-li_dot);
       digitalWrite(grnLED, LOW);
       digitalWrite(ylwLED, LOW);
       digitalWrite(redLED, HIGH);
@@ -518,8 +518,8 @@ void wallP(){
       digitalWrite(ylwLED, HIGH);
       digitalWrite(redLED, LOW);
     }else if(ri_curr > irMax){
-      spdL=spdL+kp*(irMin-ri_curr)+kd*(0-ri_dot);
-      spdR=spdR-kp*(irMin-ri_curr)+kd*(0-ri_dot);
+      spdL=spdL-kp*(irMin-ri_curr)+kd*(0-ri_dot);
+      spdR=spdR+kp*(irMin-ri_curr)+kd*(0-ri_dot);
       digitalWrite(grnLED, LOW);
       digitalWrite(ylwLED, LOW);
       digitalWrite(redLED, HIGH);
@@ -531,8 +531,8 @@ void wallP(){
   
   
   }
-//  Serial.println(spdR);
-//  Serial.println(spdL);
+  Serial.println(spdR);
+  Serial.println(spdL);
 }
 
 void center(){
@@ -549,78 +549,78 @@ void inwall(){
   
 }
 
-void updateSonar2() {
-  SonarL = false;
-  SonarR = false;
-  long left, right;
-  //read right sonar
-//  srRightAvg =  sonarRt.ping_in();//read right sonar in inches
-//  delay(50);                      //delay 50 ms
-//  srLeftAvg = sonarLt.ping_in();  //reaqd left sonar in inches
-  
-  
-  pinMode(snrRight, OUTPUT);//set the PING pin as an output
-  digitalWrite(snrRight, LOW);//set the PING pin low first
-  delayMicroseconds(2);//wait 2 us
-  digitalWrite(snrRight, HIGH);//trigger sonar by a 2 us HIGH PULSE
-  delayMicroseconds(5);//wait 5 us
-  digitalWrite(snrRight, LOW);//set pin low first again
-  pinMode(snrRight, INPUT);//set pin as input with duration as reception
-  srRightAvg = pulseIn(snrRight, HIGH)/57;//measures how long the pin is high
-
-  cmFR = srRightAvg;
-  //read left sonar
-  pinMode(snrLeft, OUTPUT);//set the PING pin as an output
-  digitalWrite(snrLeft, LOW);//set the PING pin low first
-  delayMicroseconds(2);//wait 2 us
-  digitalWrite(snrLeft, HIGH);//trigger sonar by a 2 us HIGH PULSE
-  delayMicroseconds(5);//wait 5 us
-  digitalWrite(snrLeft, LOW);//set pin low first again
-  pinMode(snrLeft, INPUT);//set pin as input with duration as reception
-  srLeftAvg = pulseIn(snrLeft, HIGH)/57;//measures how long the pin is high
-
-  
-  cmFL = srLeftAvg;
-  //  print sonar data
-//      Serial.println("leftSNR\trightSNR");
-//      Serial.print(cmFL); Serial.print("\t");
-//      Serial.println(cmFR);
-  if (cmFR < snrThresh){
-    //bitSet(flag, obFRight);//set the front right obstacle
-    //Serial.println(right);
-    SonarR = true;
-    obstacle = true;
-    }
-  else{
-    //bitClear(flag, obFRight);//clear the front right obstacle
-    SonarR = false;
-  }
-  if (cmFL < snrThresh){
-    //bitSet(flag, obFLeft);//set the front left obstacle
-    SonarL = true;
-    obstacle = true;
-  }
-  else{
-    //bitClear(flag, obFLeft);//clear the front left obstacle
-    SonarL = false;
-  }
-
-  rs_curr = srRightAvg;             //log current sensor reading [right sonar]
-  if ((rs_curr > snrMax) || (rs_curr < snrMin))
-    rs_cerror = rs_curr - snrMax;    //calculate current error (too far positive, too close negative)
-  else
-    rs_cerror = 0;                  //set error to zero if robot is in dead band
-  rs_derror = rs_cerror - rs_perror; //calculate change in error
-  rs_perror = rs_cerror;            //log current error as previous error [left sonar]
-
-  ls_curr = srLeftAvg;                   //log current sensor reading [left sonar]
-  if ((ls_curr > snrMax) || (ls_curr < snrMin))
-    ls_cerror = ls_curr - snrMax;     //calculate current error
-  else
-    ls_cerror = 0;                  //error is zero if in deadband
-  ls_derror = ls_cerror - ls_perror; //calculate change in error
-  ls_perror = ls_cerror;                //log reading as previous error
-}
+//void updateSonar2() {
+//  SonarL = false;
+//  SonarR = false;
+//  long left, right;
+//  //read right sonar
+////  srRightAvg =  sonarRt.ping_in();//read right sonar in inches
+////  delay(50);                      //delay 50 ms
+////  srLeftAvg = sonarLt.ping_in();  //reaqd left sonar in inches
+//  
+//  
+//  pinMode(snrRight, OUTPUT);//set the PING pin as an output
+//  digitalWrite(snrRight, LOW);//set the PING pin low first
+//  delayMicroseconds(2);//wait 2 us
+//  digitalWrite(snrRight, HIGH);//trigger sonar by a 2 us HIGH PULSE
+//  delayMicroseconds(5);//wait 5 us
+//  digitalWrite(snrRight, LOW);//set pin low first again
+//  pinMode(snrRight, INPUT);//set pin as input with duration as reception
+//  srRightAvg = pulseIn(snrRight, HIGH)/57;//measures how long the pin is high
+//
+//  cmFR = srRightAvg;
+//  //read left sonar
+//  pinMode(snrLeft, OUTPUT);//set the PING pin as an output
+//  digitalWrite(snrLeft, LOW);//set the PING pin low first
+//  delayMicroseconds(2);//wait 2 us
+//  digitalWrite(snrLeft, HIGH);//trigger sonar by a 2 us HIGH PULSE
+//  delayMicroseconds(5);//wait 5 us
+//  digitalWrite(snrLeft, LOW);//set pin low first again
+//  pinMode(snrLeft, INPUT);//set pin as input with duration as reception
+//  srLeftAvg = pulseIn(snrLeft, HIGH)/57;//measures how long the pin is high
+//
+//  
+//  cmFL = srLeftAvg;
+//  //  print sonar data
+////      Serial.println("leftSNR\trightSNR");
+////      Serial.print(cmFL); Serial.print("\t");
+////      Serial.println(cmFR);
+//  if (cmFR < snrThresh){
+//    //bitSet(flag, obFRight);//set the front right obstacle
+//    //Serial.println(right);
+//    SonarR = true;
+//    obstacle = true;
+//    }
+//  else{
+//    //bitClear(flag, obFRight);//clear the front right obstacle
+//    SonarR = false;
+//  }
+//  if (cmFL < snrThresh){
+//    //bitSet(flag, obFLeft);//set the front left obstacle
+//    SonarL = true;
+//    obstacle = true;
+//  }
+//  else{
+//    //bitClear(flag, obFLeft);//clear the front left obstacle
+//    SonarL = false;
+//  }
+//
+//  rs_curr = srRightAvg;             //log current sensor reading [right sonar]
+//  if ((rs_curr > snrMax) || (rs_curr < snrMin))
+//    rs_cerror = rs_curr - snrMax;    //calculate current error (too far positive, too close negative)
+//  else
+//    rs_cerror = 0;                  //set error to zero if robot is in dead band
+//  rs_derror = rs_cerror - rs_perror; //calculate change in error
+//  rs_perror = rs_cerror;            //log current error as previous error [left sonar]
+//
+//  ls_curr = srLeftAvg;                   //log current sensor reading [left sonar]
+//  if ((ls_curr > snrMax) || (ls_curr < snrMin))
+//    ls_cerror = ls_curr - snrMax;     //calculate current error
+//  else
+//    ls_cerror = 0;                  //error is zero if in deadband
+//  ls_derror = ls_cerror - ls_perror; //calculate change in error
+//  ls_perror = ls_cerror;                //log reading as previous error
+//}
 
 void updateIR() {
   //test_state = !test_state;//LED to test the heartbeat of the timer interrupt routine
@@ -652,29 +652,34 @@ void updateIR() {
     inirB = 1000;
   }
   
+//  Serial.print(inirR);
+//  Serial.print("\t");
+//  Serial.println(inirL);
   
 }
 
 void updateSpeeds() {
+  int spdO = 0;
+  int spdI = 0;
   if (state == fleft){
-    int spdO = spdR;
-    int spdI = spdL;
+    spdO = spdR;
+    spdI = spdL;
   }
   if (state == fright){
-    int spdO = spdL;
-    int spdI = spdR;
+    spdO = spdL;
+    spdI = spdR;
   }
   
   float omega = (spdO - spdI)/width;
 
   if (state == fleft){
     li_curr = inirL*sqrt(1-omega*omega);
-    li_dot = (li_curr - li_prev)/(timer_int/100000)*sqrt(1-omega*omega) + li_curr*omgea;
+    li_dot = (li_curr - li_prev)/(timer_int/100000)*sqrt(1-omega*omega) + li_curr*omega;
     li_prev = li_curr;
   }
   if (state == fright){
     ri_curr = inirR*sqrt(1-omega*omega);
-    ri_dot = (ri_curr - ri_prev)/(timer_int/100000)*sqrt(1-omega*omega) + li_curr*omgea;
+    ri_dot = (ri_curr - ri_prev)/(timer_int/100000)*sqrt(1-omega*omega) + li_curr*omega;
     ri_prev = ri_curr;
   }
   
