@@ -1,4 +1,8 @@
 
+// This program is used to make the robot have Follow-Wall behavior for Lab3. The PD control is used to control the robot speed and direction.
+// Basic logic of this program is to use one state machine to change the behavior of the robot according to the sensor readings
+// The robot will be able to maintain a distance between 4 and 6 inches from the wall (actual range is 5 to 7 inches to provide bigger turning space)
+// The program is a modular program with different levels. Modifications is required for upper level functions.
 
 #include <AccelStepper.h>//include the stepper motor library
 #include <MultiStepper.h>//include multiple stepper motor library
@@ -31,8 +35,8 @@ unsigned long pingTimer[SONAR_NUM]; // Holds the times when the next ping should
 unsigned int cm[SONAR_NUM];         // Where the ping distances are stored.
 uint8_t currentSensor = 0;          // Keeps track of which sensor is active.
 
-int cmFL = 0;
-int cmFR = 0;
+int cmFL = 0; //
+int cmFR = 0; //
 
 NewPing sonarLt(snrLeft, snrLeft);    //create an instance of the left sonar
 NewPing sonarRt(snrRight, snrRight);  //create an instance of the right sonar
@@ -80,6 +84,9 @@ movingAvg irLeftList(irListSize);   //variable to holds list of last left IR rea
 movingAvg irRearList(irListSize);   //variable to holds list of last rear IR reading
 movingAvg irRightList(irListSize);   //variable to holds list of last right IR reading
 
+//Front, back, left right ir sensor average value 
+
+
 float inirF = 0;
 float inirB = 0;
 float inirL = 0;
@@ -89,8 +96,8 @@ float inirBAvg = 0;
 float inirLAvg = 0;
 float inirRAvg = 0;
 
-volatile unsigned long last_detection = 0;
-volatile unsigned long last_stop = 0;
+volatile unsigned long last_detection = 0; //the last detection
+volatile unsigned long last_stop = 0; // the last stop
 volatile uint8_t stopCount = 0; // counter on how long the robot has been stopped
 //volatile uint8_t test_state = 0;
 int srLeftAvg;  //variable to holde left sonar data
@@ -109,27 +116,27 @@ volatile boolean test_state; //variable to hold test led state for timer interru
 
 #define timer_int 500000 // 1/2 second (500000 us) period for timer interrupt
 
-boolean obstacle = false;
-boolean SonarL = false;
-boolean SonarR = false;
-boolean IrF = false;
-boolean IrB = false;
-boolean IrL = false;
-boolean IrR = false;
+boolean obstacle = false; //obstacle detected
+boolean SonarL = false;   //left sonar detected
+boolean SonarR = false;   //right sonar detected
+boolean IrF = false;      //front ir detected
+boolean IrB = false;      //back ir detected
+boolean IrL = false;      //left ir detected
+boolean IrR = false;      //right ir detected
 
-boolean obL = false;
-boolean obR = false;
+boolean obL = false;      //obstacle on the left
+boolean obR = false;      //obstacle on the right
 
 int state = 0; //define state
 int prevState = 0; //previous state
 
 int randomstate = 0; //define random state
 
-boolean turnedleft = false;
-boolean tuenedright = false;
+boolean turnedleft = false; //used to detect left turn
+boolean tuenedright = false; // used to detect right turn
 
-int Vlefts = 0;
-int Vrights = 0;
+int Vlefts = 0;   //left wheel veloctiy (For sonar sensor and hallway state)
+int Vrights = 0;  //right wheel velocity
 
 
 float ls_curr;    //left sonar current reading
@@ -157,17 +164,17 @@ float right_derror;  //difference between right front and back sensor, this may 
 float derror;       //difference between left and right error to center robot in the hallway
 float dserror;       //difference between left and right error to center robot in the hallway
 
-int spdL = 0;
-int spdR = 0;
+int spdL = 0; //left wheel speed (wall following mode)
+int spdR = 0; //right wheel speed (wall following mode)
 
-int kp;
-int kd;
+int kp; //P value
+int kd; //D value
 
-int turns = 0;
-int cturns = 0;
+int turns = 0; //how many turns turned in end of wall condition(we find out we just need one turn in the end)
+int cturns = 0; //
 
-boolean leftwall = false;
-boolean rightwall = false;
+boolean leftwall = false; //wall follow left
+boolean rightwall = false; // wall follow right
 
 void setup() {
   // put your setup code here, to run once:
@@ -217,29 +224,42 @@ void setup() {
  //stepperLeft.setAcceleration(100);
 }
 
+// main loop decides the robot movement
+
 void loop() {
+  
   if (state == wander){
+    //wander state use wander function
     randomwonder();
+    //LED indecates for different states
     digitalWrite(grnLED, HIGH);
     digitalWrite(ylwLED, LOW);
     digitalWrite(redLED, LOW);
   }
   if (state == fright || state == fleft){
+    //wall following state for both left and right wall conditon
+    //PD control is used to change the speed and correct the robot moving direction by using calculated speed data from ir sensor reading.
     runAtSpeed(spdR,spdL);
   } else if (state == fcenter){
-
+    //hallway following state
+    //PD control is used to change the speed and correct the robot moving direction by using calculated speed data from sonar sensor reading.
     runAtSpeed(Vrights,Vlefts);
     digitalWrite(grnLED, HIGH);
     digitalWrite(ylwLED, HIGH);
     digitalWrite(redLED, HIGH);
   } else {
+    //stop the robot for bad state reading
     stepperRight.stop();
     stepperLeft.stop();
   }
 
   
   if (state == Insidecorner){
+    // inside conner state
+    // cover left and right wall conditions
+    // turn 90 degrees to avoid collision
     if (prevState == fright){
+      //find the wall location
       spin(-45);
       forward(-300,200);
       spin(130);
@@ -248,20 +268,26 @@ void loop() {
       forward(-200,200);
       spin(-130);
     }
+    //should have the wall in the same side
+    //change back to original state
     state = prevState;
       
   } else if (state == endhall){
+    //end of hall state should turn robot 180 degrees
     digitalWrite(grnLED, HIGH);
     digitalWrite(ylwLED, LOW);
     digitalWrite(redLED, HIGH);
-    forward(-800,200);
+    // turn robot 180 degrees
+    forward(-800,200); // reverse to create more room
     spin(180);
     forward(100,200);
     state = prevState;
   } else if (state == outsidecorner){
+    // outside corner state
     digitalWrite(grnLED, LOW);
     digitalWrite(ylwLED, LOW);
     digitalWrite(redLED, LOW);
+    // first turn when the ir sensor lost the wall
     if (prevState == fright){
       spin(-95);
     } else {
@@ -269,6 +295,7 @@ void loop() {
     }
     forward(800,200);
     //updateIR();
+    //check ir after the first turn. In still no wall, turn another 90 degrees and go forward to find the opposite side of the wall
     if (IrL == false && prevState == fleft){
       spin(95);
       forward(1600,200);
@@ -277,14 +304,16 @@ void loop() {
       forward(1600,200);
     }
     
-    state = prevState;
+    state = prevState; //return to last wall follow state if robot find the wall
+    // otherwise turn to random wondering
   } else if(state == runAway){
+    // runAway state is used to avoid front obstacles in random wander state and follow the wall after the turn if possible
     digitalWrite(grnLED, HIGH);
     digitalWrite(ylwLED, LOW);
     digitalWrite(redLED, HIGH);
     stepperRight.stop();
     stepperLeft.stop();
-    
+    //provide space to turn
     forward(-800,200);
     spin(90);
   }
@@ -294,7 +323,9 @@ void loop() {
 }
 
 // random wander function
+// random generate a number between 1 to 3, use the number to decide the moving behavior
 void randomwonder(){
+  // generate random states by using random number
   if (randomstate == 0){
     forward(800, 250);
     randomstate = random(1,3);
@@ -307,6 +338,8 @@ void randomwonder(){
   }
 }
 
+// a no blocking function to control the wheel speed.
+// can continuously change the speed and break by a blocking function
 void runAtSpeed (int Rspd,int Lspd) {
   stepperRight.setSpeed(Rspd);
   stepperLeft.setSpeed(Lspd);
@@ -315,6 +348,9 @@ void runAtSpeed (int Rspd,int Lspd) {
   
 }
 
+
+// spin function from Lab1
+// can spin to the specified angle
 void spin(int angle){
   long stepsToTake = angle*5.1;//calculate steps to reach the angle
   
@@ -338,11 +374,13 @@ void spin(int angle){
   }
 }
 
+//a blocking function to move the stepper to a specified distance with a certain speed
 void runAtSpeedToPosition() {
   stepperRight.runSpeedToPosition();
   stepperLeft.runSpeedToPosition();
 }
 
+//start to move the stepper to a specified distance with a certain speed
 void runToStop ( void ) {
   int runNow = 1;
   int rightStopped = 0;
@@ -363,6 +401,7 @@ void runToStop ( void ) {
   }
 }
 
+//move forward with required speed and distance
 void forward(int rot, int spd) {
 //  long positions[2]; // Array of desired stepper positions
 //  stepperRight.setMaxSpeed(spd);//set right motor speed
@@ -385,28 +424,31 @@ void forward(int rot, int spd) {
   //runToStop();
 }
 
+//state update function
+//update states according to current detection
+
 void updateState() {
-  prevState = state;
+  prevState = state; // set state
 
   
   if (obstacle == false) { //no sensors triggered
-    state = wander;
+    state = wander; //wonder state
   }  else if (obstacle == true) {
-    if(IrR == true && IrL == false && IrF == false){
-      state = fright;
-    }else if(IrL == true && IrR == false && IrF == false){
-      state = fleft;
-    }else if(IrL == true && IrR == true && IrF == false){
-      state = fcenter;
-    }else if(((IrL == true && IrR == false && IrF == true)||(IrL == false && IrR == true && IrF == true)) && (prevState == fright || prevState == fleft)){
-      state = Insidecorner;
-    }else if((IrL == true && IrR == true && IrF == true) && (prevState == fcenter)){
-      state = endhall;
-    }else if(((IrL == false && IrR == false && IrF == false)||(IrL == false && IrR == false && IrF == false)) && (prevState == fright || prevState == fleft)){
-      state = outsidecorner;
+    if(IrR == true && IrL == false && IrF == false){ //only right triggered
+      state = fright; //wall right
+    }else if(IrL == true && IrR == false && IrF == false){ // only left triggered
+      state = fleft; //wall left
+    }else if(IrL == true && IrR == true && IrF == false){ //both left and right triggered
+      state = fcenter; //in hallway
+    }else if(((IrL == true && IrR == false && IrF == true)||(IrL == false && IrR == true && IrF == true)) && (prevState == fright || prevState == fleft)){ //front and left/right triggered
+      state = Insidecorner;//inside corner
+    }else if((IrL == true && IrR == true && IrF == true) && (prevState == fcenter)){ // all triggered
+      state = endhall; // end of hall
+    }else if(((IrL == false && IrR == false && IrF == false)||(IrL == false && IrR == false && IrF == false)) && (prevState == fright || prevState == fleft)){ //no detection after wall following
+      state = outsidecorner; // outside corner
       obstacle = false;
-    }else if(IrF == true && (IrL == false && IrR == false)){
-      state = runAway;
+    }else if(IrF == true && (IrL == false && IrR == false)){ // only front triggered
+      state = runAway; //avoid collision
       obstacle = true;
     }
   }
@@ -419,6 +461,7 @@ void updateState() {
   printState();
 }
 
+//serial print state to check current state
 void printState(){
   if (state == wander){
     Serial.println("wander");
@@ -439,44 +482,53 @@ void printState(){
   }
 }
 
+//time interrupt
+// update readings and speed in the background
+// update ir, sonar, error, speed, state
 
 void updateSensors() {
   test_state = !test_state;
   digitalWrite(test_led, test_state);
 //  state = 0;
 //  obstacle = false;
-  updateIR();
-  updateSonar2();
-      center();
+  updateIR(); //update ir
+  updateSonar2(); //update sonar reading
+      center(); //speed for hall way state
 
   //state = fleft;
   
-  updateError();
-  updateState();
+  updateError(); //calculate error 
+  updateState(); //update state
   //prevState = fright;
   //state = Insidecorner;
   //updateSpeed();
-  wallP();
+  wallP(); //speed for wall following state
 }
 
-void wallP(){
-  spdL=200;
-  spdR=200;
-  kp=10;
-  kd=10;
+//calculate speed for wall following state
+// use ir sensor reading
+// PD control included
 
-  if ((state == fleft)){
+void wallP(){
+  spdL=200;// base left speed
+  spdR=200;// base right speed
+  kp=10; // P value
+  kd=10; // D value
+
+  if ((state == fleft)){ // left or right wall condition
+    
     digitalWrite(grnLED, HIGH);
     digitalWrite(ylwLED, HIGH);
     
-    if ((li_cerror>0)&&(turns<=13)){
-          spdL=spdL+kp*li_perror+kd*li_derror;
-          spdR=spdR-kp*li_perror+kd*li_derror;
-          turns=turns+1;
+    if ((li_cerror>0)&&(turns<=13)){ // too close condition
+          spdL=spdL+kp*li_perror+kd*li_derror;  // PD for left wheel
+          spdR=spdR-kp*li_perror+kd*li_derror;  // PD for right wheel
+          turns=turns+1;    // count for turns to prevent overshoot
+          // LED indecator
           digitalWrite(grnLED, LOW);
           digitalWrite(ylwLED, HIGH);
           digitalWrite(redLED, LOW);
-    }else if((li_cerror<0)&&(turns<=13)){
+    }else if((li_cerror<0)&&(turns<=13)){ // too close condition
           spdL=spdL+kp*1.1*li_perror+kd*li_derror;
           spdR=spdR-kp*1.1*li_perror+kd*li_derror;
           turns=turns+1;
@@ -484,13 +536,13 @@ void wallP(){
           digitalWrite(ylwLED, LOW);
           digitalWrite(redLED, HIGH);
           
-    }else if((li_cerror==0)){
-      spdL=spdL+kd*(li_curr-6)/2;
-      turns = 0;
+    }else if((li_cerror==0)){ // in side range condition
+      spdL=spdL+kd*(li_curr-6)/2; // small PD adjustment to maintain the dynamics of robot
+      turns = 0; //reset turns
       
     }
 
-  }else if(state == fright){
+  }else if(state == fright){ // same logic expect for right wall condtion
     digitalWrite(redLED, HIGH);
     digitalWrite(ylwLED, HIGH);
     if ((ri_cerror>0)&&(turns<=10)){
@@ -518,13 +570,18 @@ void wallP(){
 //  Serial.println(spdL);
 }
 
+//calculate speed for hall following state
+// use ir sensor to detect wall
+// use sonar to control the speed (sonar angle can be adjusted)
+// PD control included
+
 void center(){
-  Vlefts=200;
-  Vrights=200;
-  kp=4;
-  kd=10;
-    Vrights=Vrights-kp*dserror+kd*rs_derror;
-    Vlefts=Vlefts+kp*dserror+kd*rs_derror;
+  Vlefts=200; // base left speed
+  Vrights=200;// base right speed
+  kp=4;       //P value
+  kd=10;      //D value
+    Vrights=Vrights-kp*dserror+kd*rs_derror;    // PD for left wheel
+    Vlefts=Vlefts+kp*dserror+kd*rs_derror;      // PD for right wheel
 //  if (dserror>=5 && cturns<=30){
 //      spdR=spdR-kp*dserror+kd*ri_derror;
 //    spdL=spdL+kp*dserror+kd*ri_derror;
@@ -539,11 +596,12 @@ void center(){
 //    spdL=spdL+kp*dserror*0.5;
 //  }
 
-   Serial.println(Vrights);
-   Serial.println(Vlefts);
+//   Serial.println(Vrights);
+//   Serial.println(Vlefts);
 
 }
 
+// update sonar reading and calculate basic error
 
 void updateSonar2() {
   SonarL = false;
@@ -564,7 +622,7 @@ void updateSonar2() {
   pinMode(snrRight, INPUT);//set pin as input with duration as reception
   srRightAvg = pulseIn(snrRight, HIGH)/57;//measures how long the pin is high
 
-  cmFR = srRightAvg;
+  cmFR = srRightAvg; //take the reading
   //read left sonar
   pinMode(snrLeft, OUTPUT);//set the PING pin as an output
   digitalWrite(snrLeft, LOW);//set the PING pin low first
@@ -576,29 +634,29 @@ void updateSonar2() {
   srLeftAvg = pulseIn(snrLeft, HIGH)/57;//measures how long the pin is high
 
   
-  cmFL = srLeftAvg;
+  cmFL = srLeftAvg; //take the reading
   //  print sonar data
 //      Serial.println("leftSNR\trightSNR");
 //      Serial.print(cmFL); Serial.print("\t");
 //      Serial.println(cmFR);
-  if (cmFR < snrThresh){
+  if (cmFR < snrThresh){ // test the distance to check whether in wall or hall condition
     //bitSet(flag, obFRight);//set the front right obstacle
     //Serial.println(right);
-    SonarR = true;
-    obstacle = true;
+    SonarR = true;  // sonar right detection
+    obstacle = true;  // obstacle ditection
     }
   else{
     //bitClear(flag, obFRight);//clear the front right obstacle
-    SonarR = false;
+    SonarR = false;  //no sonar right detection
   }
   if (cmFL < snrThresh){
     //bitSet(flag, obFLeft);//set the front left obstacle
-    SonarL = true;
-    obstacle = true;
+    SonarL = true; // sonar left detection
+    obstacle = true;// obstacle ditection
   }
   else{
     //bitClear(flag, obFLeft);//clear the front left obstacle
-    SonarL = false;
+    SonarL = false; // sonar right detection
   }
 
   rs_curr = srRightAvg;             //log current sensor reading [right sonar]
@@ -618,6 +676,8 @@ void updateSonar2() {
   ls_perror = ls_cerror;                //log reading as previous error
 }
 
+// update IR reading and calculate basic error
+
 void updateIR() {
   //test_state = !test_state;//LED to test the heartbeat of the timer interrupt routine
   //digitalWrite(enableLED, test_state);  // Toggles the LED to let you know the timer is working
@@ -625,14 +685,15 @@ void updateIR() {
   IrB = false;
   IrL = false;
   IrR = false;
+  // average ir readings to avoid bad reading for all direction
   
-  inirFAvg = irFrontList.reading(analogRead(irFront));
+  inirFAvg = irFrontList.reading(analogRead(irFront)); 
   inirBAvg = irRearList.reading(analogRead(irRear));
   inirLAvg = irLeftList.reading(analogRead(irLeft));
   inirRAvg = irRightList.reading(analogRead(irRight));
 
   
-
+  // calibrate ir reading for all direction
   inirF = 2000/(inirFAvg+50)-1.5;
   inirB = 2000/(inirBAvg+50)-1.5;
   inirL = 2500/(inirLAvg-32)-1.8;
@@ -643,6 +704,7 @@ void updateIR() {
 //  inirL = 2500/(analogRead(irLeft)-32)-1.8;
 //  inirR = 2500/(analogRead(irRight)-32)-1.8;
 
+  //clear false reading
   if (inirR<=0){
     inirR = 1000;
   }
@@ -660,6 +722,7 @@ void updateIR() {
 //      Serial.print(inirL); Serial.print("\t");
 //      Serial.println(inirR);
 
+// test the distance to check whether in wall, hallway, obstacle condition
   if (inirF <= irMax){
     obstacle = true;
     IrF = true;
@@ -686,6 +749,8 @@ void updateIR() {
   }else{
     IrR = false;
   }
+
+  //calcuate error
 
     ri_curr = inirR;             //log current sensor reading [right IR]
   if ((ri_curr > irMax) | (ri_curr < irMin)){
@@ -724,6 +789,10 @@ void updateIR() {
 
   
 }
+
+
+// function to update the left and right error
+//
 
 void updateError() {
   left_derror = ls_cerror*0.39 - li_cerror; //difference between left front and back sensor, use threshold for robot mostly parallel to wall
