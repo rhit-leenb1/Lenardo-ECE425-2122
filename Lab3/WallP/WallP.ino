@@ -1,8 +1,11 @@
-
+// Description:
 // This program is used to make the robot have Follow-Wall behavior for Lab3. The PD control is used to control the robot speed and direction.
 // Basic logic of this program is to use one state machine to change the behavior of the robot according to the sensor readings
 // The robot will be able to maintain a distance between 4 and 6 inches from the wall (actual range is 5 to 7 inches to provide bigger turning space)
 // The program is a modular program with different levels. Modifications is required for upper level functions.
+// Authors: Nathan Lee   Shantao Cao
+// Date: 1/16/2022
+
 
 #include <AccelStepper.h>//include the stepper motor library
 #include <MultiStepper.h>//include multiple stepper motor library
@@ -35,8 +38,8 @@ unsigned long pingTimer[SONAR_NUM]; // Holds the times when the next ping should
 unsigned int cm[SONAR_NUM];         // Where the ping distances are stored.
 uint8_t currentSensor = 0;          // Keeps track of which sensor is active.
 
-int cmFL = 0; //
-int cmFR = 0; //
+int cmFL = 0; //Left sonar reading in cm
+int cmFR = 0; //Right sonar reading in cm
 
 NewPing sonarLt(snrLeft, snrLeft);    //create an instance of the left sonar
 NewPing sonarRt(snrRight, snrRight);  //create an instance of the right sonar
