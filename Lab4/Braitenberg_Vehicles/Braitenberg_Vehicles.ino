@@ -31,7 +31,7 @@ MultiStepper steppers;//create instance to control multiple steppers at the same
 int spdR = 0;
 int spdL = 0;
 int baseSpeed = 200;
-int speedFilterFactor = 100;
+int speedFilterFactor = 100; // filters anything smaller than 100 because int cut off
 int speedGain = 100;
 
 int max_spd = 2000;
@@ -87,10 +87,10 @@ void loop(void) {
 
   // ???
   if (rightReading > 220){
-    spdL = -(photocellReadingR.getAvg()-220)/speedFilterFactor;
+    spdR = -(photocellReadingR.getAvg()-220)/speedFilterFactor;
   }
   if (leftReading > 320){
-    spdR = -(photocellReadingL.getAvg()-320)/speedFilterFactor;
+    spdL = -(photocellReadingL.getAvg()-320)/speedFilterFactor;
   }
   
   spdR = spdR*speedGain + baseSpeed;
