@@ -76,6 +76,7 @@ MultiStepper steppers;//create instance to control multiple steppers at the same
 #define stepperEnFalse true //variable for disabling stepper motor
 
 #define pauseTime 2500 //time before robot moves
+int left = 0;
 
 void setup()
 {
@@ -113,12 +114,19 @@ void setup()
 
 void loop()
 {
+  if(left<=5000){
+    left  = left+1;
+  }else{
+    left = 5000;
+  }
+  
   //uncomment each function one at a time to see what the code does
   //move1();//call move back and forth function
   //move2();//call move back and forth function with AccelStepper library functions
   //move3();//call move back and forth function with MultiStepper library functions
   //move4(); //move to target position with 2 different speeds
-  move5(); //move continuously with 2 different speeds
+  move5(left); //move continuously with 2 different speeds
+  delay(200);
 }
 
 /*
@@ -248,11 +256,11 @@ void move4() {
 }
 
 /*This function will move continuously at 2 different speeds*/
-void move5() {
+void move5(int left) {
   digitalWrite(redLED, LOW);//turn off red LED
   digitalWrite(grnLED, HIGH);//turn on green LED
   digitalWrite(ylwLED, HIGH);//turn on yellow LED
-  int leftSpd = 5000;//right motor speed
+  int leftSpd = left;//right motor speed
   int rightSpd = 1000; //left motor speed
   stepperLeft.setSpeed(leftSpd);//set left motor speed
   stepperRight.setSpeed(rightSpd);//set right motor speed
