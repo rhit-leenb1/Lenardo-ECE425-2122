@@ -2,7 +2,7 @@
 #include <MultiStepper.h>//include multiple stepper motor library
 #include <NewPing.h> //include sonar library
 #include <TimerOne.h>
-#include <movingAvg.h>; //including moving average library
+#include <movingAvg.h> //including moving average library
 
 const int rtStepPin = 50; //right stepper motor step pin
 const int rtDirPin = 51;  // right stepper motor direction pin
@@ -120,6 +120,14 @@ boolean Light = false;
 int state = 0;      // record state
 int randomstate = 0; // wandering direction record
 
+int photocellPin = 15;     // the cell and 10K pulldown are connected to a0
+movingAvg photocellReadingL(10);     // the analog reading from the sensor divider
+movingAvg photocellReadingR(10);     // the analog reading from the sensor divider
+
+int baseSpeed = 200;          //light state base speed
+int speedFilterFactor = 100; // filters anything smaller than 100 because int cut off
+int speedGain = 100;          // light state speed gain
+
 
 void setup() {
   // put your setup code here, to run once:
@@ -165,6 +173,9 @@ void setup() {
   Serial.println("Timer Interrupt to Update Sensors......");
  // digitalWrite(redLED,HIGH);
   delay(2500); //seconds before the robot moves
+
+  photocellReadingL.begin();
+  photocellReadingR.begin();
 }
 
 void loop() {
@@ -185,10 +196,14 @@ void loop() {
     digitalWrite(ylwLED, HIGH);//turn on yellow LED
     Shyfunction();
   }else if(obstacle == false){
-    stop;
-    randomwonder();
-    //digitalWrite(grnLED, HIGH);//turn on green LED
-    digitalWrite(ylwLED, LOW);//turn on yellow LED
+    if (Light == false){
+          stop;
+      randomwonder();
+      //digitalWrite(grnLED, HIGH);//turn on green LED
+      digitalWrite(ylwLED, LOW);//turn on yellow LED
+    }else if(Light == true){
+      runAtSpeed();
+    }
   }
 }
 
@@ -353,6 +368,14 @@ void runAtSpeedToPosition() {
   stepperLeft.runSpeedToPosition();
 }
 
+void runAtSpeed () {
+  stepperRight.setSpeed(spdR);
+  stepperLeft.setSpeed(spdL);
+  while(stepperRight.runSpeed() || stepperLeft.runSpeed()){
+  }
+  
+}
+
 void updateState() {
   if (IrR == true){
     Serial.println(" IrR True");
@@ -456,6 +479,7 @@ void updateSensors() {
   digitalWrite(test_led, test_state);
   state = 0;
   obstacle = false;
+  Light = false;
   updateIR();
   //updateSonar2();
   
@@ -576,4 +600,31 @@ void updateIR() {
   }else{
     IrR = false;
   }
+}
+
+void updatePhotocell(){
+  photocellReadingL.reading(analogRead(14));  
+  photocellReadingR.reading(analogRead(15));
+
+  int rightReading = photocellReadingR.getAvg();
+  int leftReading = photocellReadingL.getAvg();
+
+  if (rightReading > 220){
+    Light = true;
+    PR = true;
+    spdR = -(photocellReadingR.getAvg()-220)/speedFilterFactor;
+  }else{
+    PR = false;
+  }
+  if (leftReading > 320){
+    Light = true;
+    PL=true;
+    spdL = -(photocellReadingL.getAvg()-320)/speedFilterFactor;
+  }else{
+    PL=false;
+  }
+
+  spdR = spdR*speedGain + baseSpeed;
+  spdL = spdL*speedGain + baseSpeed;
+  
 }
