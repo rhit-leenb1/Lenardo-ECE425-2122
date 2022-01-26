@@ -196,8 +196,8 @@ boolean rightwall = false; // wall follow right
 
 int photocellPin1 = 15;     // the cell and 10K pulldown are connected to a0
 int photocellPin2 = 14;     // the cell and 10K pulldown are connected to a0
-movingAvg photocellReadingL(15);     // the analog reading from the sensor divider
-movingAvg photocellReadingR(15);     // the analog reading from the sensor divider
+movingAvg photocellReadingL(10);     // the analog reading from the sensor divider
+movingAvg photocellReadingR(10);     // the analog reading from the sensor divider
 
 void setup() {
   // put your setup code here, to run once:
@@ -344,34 +344,59 @@ void loop() {
     }
   }else if(Light == true){
     stop();
+    digitalWrite(grnLED, LOW);
+    digitalWrite(ylwLED, LOW);
+    digitalWrite(redLED, LOW);
     delay(500);
-    for (int n = 0; n < 180; n++){
-      if(PL == true && midlight == false){
+    digitalWrite(ylwLED, HIGH);
+    if (PL == true){
+      for (int n = 0; n < 180; n++){
         spin(-2);
         delay(100);
         nturns = nturns-1;
-      }else if(PR == true && midlight == false){
+        if(midlight == true){
+          break;
+        }
+      }
+    }else if(PR == true){
+        for (int n = 0; n < 180; n++){
         spin(2);
         delay(100);
-        nturns = nturns+1;
-      }else if(midlight == true){
-        break;
-      }
+        nturns = nturns-1;
+        if(midlight == true){
+          break;
+        }
     }
+    }
+//    for (int n = 0; n < 180; n++){
+//      if(PL == true && midlight == false){
+//        spin(-2);
+//        delay(100);
+//        nturns = nturns-1;
+//      }else if(PR == true && midlight == false){
+//        spin(2);
+//        delay(100);
+//        nturns = nturns+1;
+//      }else if(midlight == true){
+//        break;
+//      }
+//    }
     stop();
     delay(500);
     for(int n = 0; n < 2000; n++){
-      if(IrF == false){
+      if(inirF > 4.5){
         forward(-qrtr_rot,robot_spd);
         nsteps = nsteps+1;
-      }else if(IrF == true){
+      }else if(inirF <= 4.5){
         break;
       }
     }
+    digitalWrite(ylwLED, LOW);
+    digitalWrite(redLED, HIGH);
     stop();
     delay(1000);
     reverse(-nsteps*qrtr_rot,robot_spd);
-    spin(-nturns*1.5);
+    spin(-nturns*1.75);
     stop();
     midlight = false;
     Light = false;
@@ -379,6 +404,9 @@ void loop() {
     PR = false;
     nsteps = 0;
     nturns = 0;
+    digitalWrite(ylwLED, LOW);
+    digitalWrite(redLED, LOW);
+    delay(1000);
   }
     
 
@@ -525,9 +553,9 @@ void updateState() {
       obstacle = true;
     }
   }
-        Serial.print("IrL = \t"); Serial.print(IrL);
-        Serial.print("IrR = \t"); Serial.println(IrR);
-        Serial.print("IrF = \t"); Serial.print(IrF);
+//        Serial.print("IrL = \t"); Serial.print(IrL);
+//        Serial.print("IrR = \t"); Serial.println(IrR);
+//        Serial.print("IrF = \t"); Serial.print(IrF);
 //        Serial.print("SonarR = \t"); Serial.println(SonarR);
 //        Serial.print("SonarL = \t"); Serial.println(SonarL);
 //
@@ -565,9 +593,9 @@ void updateSensors() {
 //  state = 0;
 //  obstacle = false;
   updateIR(); //update ir
-  updateSonar2(); //update sonar reading
+//  updateSonar2(); //update sonar reading
   updateLight();
-      center(); //speed for hall way state
+  center(); //speed for hall way state
 
   //state = fleft;
   
@@ -589,57 +617,59 @@ void wallP(){
   kp=10; // P value
   kd=10; // D value
 
-  if ((state == fright)){ // left or right wall condition
+  if ((state == fleft)){ // left or right wall condition
     
     digitalWrite(grnLED, HIGH);
     digitalWrite(ylwLED, HIGH);
     
-    if ((li_cerror>0)&&(turns<=13)){ // too close condition
-          spdL=spdL+kp*li_perror+kd*li_derror;  // PD for left wheel
-          spdR=spdR-kp*li_perror+kd*li_derror;  // PD for right wheel
+    if ((li_cerror>0)){//&&(turns<=13)){ // too close condition
+          spdL=spdL-kp*li_perror+kd*li_derror;  // PD for left wheel
+          spdR=spdR+kp*li_perror+kd*li_derror;  // PD for right wheel
           turns=turns+1;    // count for turns to prevent overshoot
           // LED indecator
           digitalWrite(grnLED, LOW);
           digitalWrite(ylwLED, HIGH);
           digitalWrite(redLED, LOW);
-    }else if((li_cerror<0)&&(turns<=13)){ // too close condition
-          spdL=spdL+kp*1.1*li_perror+kd*li_derror;
-          spdR=spdR-kp*1.1*li_perror+kd*li_derror;
+    }else if((li_cerror<0)){//&&(turns<=13)){ // too close condition
+          spdL=spdL-kp*1.1*li_perror+kd*li_derror;
+          spdR=spdR+kp*1.1*li_perror+kd*li_derror;
           turns=turns+1;
           digitalWrite(grnLED, LOW);
           digitalWrite(ylwLED, LOW);
           digitalWrite(redLED, HIGH);
           
     }else if((li_cerror==0)){ // in side range condition
-      spdL=spdL+kd*(li_curr-6)/2; // small PD adjustment to maintain the dynamics of robot
+      spdL=spdL-kd*(li_curr-6)/2; // small PD adjustment to maintain the dynamics of robot
       turns = 0; //reset turns
       
     }
 
-  }else if(state == fleft){ // same logic expect for right wall condtion
+  }else if(state == fright){ // same logic expect for right wall condtion
     digitalWrite(redLED, HIGH);
     digitalWrite(ylwLED, HIGH);
-    if ((ri_cerror>0)&&(turns<=10)){
-          spdR=spdR+kp*1.2*ri_perror+kd*ri_derror;
-          spdL=spdL-kp*1.2*ri_perror+kd*ri_derror;
+    if ((ri_cerror>0)){//&&(turns<=10)){
+          spdR=spdR-kp*1.2*ri_perror+kd*ri_derror;
+          spdL=spdL+kp*1.2*ri_perror+kd*ri_derror;
           turns=turns+1;
           digitalWrite(grnLED, LOW);
           digitalWrite(ylwLED, HIGH);
           digitalWrite(redLED, LOW);
-    }else if((ri_cerror<0)&&(turns<=10)){
-          spdR=spdR+kp*1.3*ri_perror+kd*ri_derror;
-          spdL=spdL-kp*1.3*ri_perror+kd*ri_derror;
+    }else if((ri_cerror<0)){//&&(turns<=10)){
+          spdR=spdR-kp*1.3*ri_perror+kd*ri_derror;
+          spdL=spdL+kp*1.3*ri_perror+kd*ri_derror;
           turns=turns+1;
           digitalWrite(grnLED, LOW);
           digitalWrite(ylwLED, LOW);
           digitalWrite(redLED, HIGH);
     }else if((ri_cerror==0)){
-      spdR=spdR+kd*(ri_curr-6)/2;
+      spdR=spdR-kd*(ri_curr-6)/2;
       turns = 0;
     }
   
   
   }
+  Serial.println(spdR);
+  Serial.println(spdL);
 }
 
 //calculate speed for hall following state
@@ -888,23 +918,29 @@ void updateLight(){
   sumReading = rightReading+leftReading;
 
 
-  if (rightReading > 240){
+  if (rightReading > 260){
     PR = true;
     Light = true;
   }
 //  else{
 //    PR = false;
 //  }
-  if (leftReading > 280){
+  if (leftReading > 260){
     PL = true;
     Light = true;
   }
 //  else{
 //    PR = false;
 //  }
-  if (sumReading-prevsumReading < -3){
-    midlight = true;
+//  if (sumReading-prevsumReading < -3){
+//    midlight = true;
+//  }
+if (sumReading-prevsumReading < -3){
+  if(rightReading-leftReading<3||rightReading-leftReading>-3){
+      midlight = true;
   }
+
+}
 //  else{
 //    midlight = false;
 //  }
@@ -917,6 +953,8 @@ void updateLight(){
   Serial.print(sumReading);
   Serial.print(" \t ");
   Serial.print(Light);
+    Serial.print(" \t ");
+  Serial.print(midlight);
   Serial.println(" \t ");
 
   prevsumReading = sumReading;
