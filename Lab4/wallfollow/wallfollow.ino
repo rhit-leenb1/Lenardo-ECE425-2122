@@ -395,8 +395,11 @@ void loop() {
     digitalWrite(redLED, HIGH);
     stop();
     delay(1000);
-    reverse(-nsteps*qrtr_rot,robot_spd);
-    spin(-nturns*1.75);
+    spin(180);
+    delay(100);
+    reverse(nsteps*qrtr_rot,robot_spd);
+    spin(nturns*1.75);
+    spin(180);
     stop();
     midlight = false;
     Light = false;
