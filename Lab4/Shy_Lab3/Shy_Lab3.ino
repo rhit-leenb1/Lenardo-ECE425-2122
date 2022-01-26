@@ -124,10 +124,12 @@ int photocellPin = 15;     // the cell and 10K pulldown are connected to a0
 movingAvg photocellReadingL(10);     // the analog reading from the sensor divider
 movingAvg photocellReadingR(10);     // the analog reading from the sensor divider
 
-int baseSpeed = 200;          //light state base speed
-int speedFilterFactor = 100; // filters anything smaller than 100 because int cut off
-int speedGain = 100;          // light state speed gain
+int baseSpeed = 0;          //light state base speed
+int speedFilterFactor = 10; // filters anything smaller than 100 because int cut off
+int speedGain = 10;          // light state speed gain
 
+int rightReading
+int leftReading
 
 void setup() {
   // put your setup code here, to run once:
@@ -189,6 +191,8 @@ void loop() {
 //    delay(500);
 //    spin(90);
 //    delay(500);
+  //Light = false;
+  //updatePhotocell();
   
   if (obstacle == true){
     
@@ -199,10 +203,12 @@ void loop() {
     if (Light == false){
           stop;
       randomwonder();
-      //digitalWrite(grnLED, HIGH);//turn on green LED
+      digitalWrite(grnLED, HIGH);//turn on green LED
       digitalWrite(ylwLED, LOW);//turn on yellow LED
     }else if(Light == true){
       runAtSpeed();
+      digitalWrite(grnLED, LOW);//turn on green LED
+      digitalWrite(ylwLED, LOW);//turn on yellow LED
     }
   }
 }
@@ -214,7 +220,7 @@ void stop() {
 
 void randomwonder(){
   if (randomstate == 0){
-    forward(one_rotation, 250);
+    forward(one_rotation*0.5, 250);
     randomstate = random(1,3);
   }else if(randomstate == 1){
     turnright(one_rotation, 250);
@@ -447,22 +453,22 @@ void Shyfunction(){
     stop();
   }else if (obstacle == true && state == rev){
     spin(180);
-    forward(one_rotation*5, robot_spd);
+    forward(one_rotation*2, robot_spd);
     delay(500);
     Serial.println("robot reverse");
     
   }else if(obstacle == true && state == goleft){
     spin(90);
-    forward(one_rotation*3, robot_spd);
+    forward(one_rotation*2, robot_spd);
     delay(500);
     Serial.println("robot left");
   }else if(obstacle == true && state == goright){
     spin(-90);
-    forward(one_rotation*3, robot_spd);
+    forward(one_rotation*2, robot_spd);
     delay(500);
     Serial.println("robot right");
   }else if(obstacle == true && state == fwd){
-    forward(one_rotation*5, robot_spd);//*(6.5-inirB)/6);
+    forward(one_rotation*2, robot_spd);//*(6.5-inirB)/6);
     delay(500);
     Serial.println("robot reverse");
       
@@ -481,11 +487,14 @@ void updateSensors() {
   obstacle = false;
   Light = false;
   updateIR();
+  updatePhotocell();
   //updateSonar2();
   
   updateState();
   //updateSpeed();
   Serial.println(state);
+  Serial.println("light");
+  Serial.println(Light);
 }
 
 void updateSonar2() {
@@ -606,25 +615,41 @@ void updatePhotocell(){
   photocellReadingL.reading(analogRead(14));  
   photocellReadingR.reading(analogRead(15));
 
-  int rightReading = photocellReadingR.getAvg();
-  int leftReading = photocellReadingL.getAvg();
+  rightReading = photocellReadingR.getAvg();
+  leftReading = photocellReadingL.getAvg();
 
   if (rightReading > 220){
     Light = true;
     PR = true;
-    spdR = -(photocellReadingR.getAvg()-220)/speedFilterFactor;
+    spdR = (photocellReadingR.getAvg()-220)/speedFilterFactor;
   }else{
     PR = false;
   }
   if (leftReading > 320){
     Light = true;
     PL=true;
-    spdL = -(photocellReadingL.getAvg()-320)/speedFilterFactor;
+    spdL = (photocellReadingL.getAvg()-320)/speedFilterFactor;
   }else{
     PL=false;
   }
 
   spdR = spdR*speedGain + baseSpeed;
   spdL = spdL*speedGain + baseSpeed;
+
+  if (spdR>1000 || spdR<-1000){
+    spdR  = 0;
+  }
+  if((spdL>1000 || spdL<-1000)){
+    spdL  = 0;
+  }
+
+    Serial.print(photocellReadingL.getAvg());
+  Serial.print(" \t ");
+  Serial.print(photocellReadingR.getAvg());
+  Serial.print(" \t ");
+  Serial.print(spdL);
+  Serial.print(" \t ");
+  Serial.println(spdR);
+
   
 }

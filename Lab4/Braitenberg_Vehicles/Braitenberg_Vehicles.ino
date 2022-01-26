@@ -4,7 +4,7 @@
 // Date: 1/16/2022
 #include <AccelStepper.h>//include the stepper motor library
 #include <MultiStepper.h>//include multiple stepper motor library
-#include <movingAvg.h>;
+#include <movingAvg.h>
 #include <TimerOne.h>
 
 
@@ -66,8 +66,8 @@ void setup(void) {
   digitalWrite(stepperEnable, stepperEnTrue);//turns on the stepper motor driver
   digitalWrite(enableLED, HIGH);//turn on enable LED
 
-  Timer1.initialize(1000);         // initialize timer1, and set a timer_int second period
-  Timer1.attachInterrupt(runAtSpeed);  // attaches updateIR() as a timer overflow interrupt
+  Timer1.initialize(120000);         // initialize timer1, and set a timer_int second period
+  Timer1.attachInterrupt(updatereading);  // attaches updateIR() as a timer overflow interrupt
   
   Serial.begin(9600);
   photocellReadingL.begin();
@@ -76,7 +76,48 @@ void setup(void) {
 }
  
 void loop(void) {
-  photocellReadingL.reading(analogRead(14));  
+//  photocellReadingL.reading(analogRead(14));  
+//  photocellReadingR.reading(analogRead(15));
+//
+//  int rightReading = photocellReadingR.getAvg();
+//  int leftReading = photocellReadingL.getAvg();
+//
+//  spdR = 0;
+//  spdL = 0;
+//
+//  // ???
+//  if (rightReading > 220){
+//    spdR = -(photocellReadingR.getAvg()-220)/speedFilterFactor;
+//  }
+//  if (leftReading > 320){
+//    spdL = -(photocellReadingL.getAvg()-320)/speedFilterFactor;
+//  }
+//  
+//  spdR = spdR*speedGain + baseSpeed;
+//  spdL = spdL*speedGain + baseSpeed;
+//
+//  Serial.print(photocellReadingL.getAvg());
+//  Serial.print(" \t ");
+//  Serial.print(photocellReadingR.getAvg());
+//  Serial.print(" \t ");
+//  Serial.print(spdL);
+//  Serial.print(" \t ");
+//  Serial.println(spdR);
+
+ runAtSpeed();
+}
+
+
+void runAtSpeed () {
+  stepperRight.setSpeed(spdR);
+  stepperLeft.setSpeed(spdL);
+  while(stepperRight.runSpeed() || stepperLeft.runSpeed()){
+  }
+  
+}
+
+void updatereading(){
+    photocellReadingL.reading(analogRead(14));  
   photocellReadingR.reading(analogRead(15));
 
   int rightReading = photocellReadingR.getAvg();
@@ -104,14 +145,4 @@ void loop(void) {
   Serial.print(" \t ");
   Serial.println(spdR);
 
- 
-}
-
-
-void runAtSpeed () {
-  stepperRight.setSpeed(spdR);
-  stepperLeft.setSpeed(spdL);
-  while(stepperRight.runSpeed() || stepperLeft.runSpeed()){
-  }
-  
 }
