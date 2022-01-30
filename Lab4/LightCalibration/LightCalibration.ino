@@ -71,6 +71,9 @@ void setup(void) {
   digitalWrite(stepperEnable, stepperEnTrue);//turns on the stepper motor driver
   digitalWrite(enableLED, HIGH);//turn on enable LED
 
+  photocellReadingL.begin();
+  photocellReadingR.begin();
+
   for (int i = 0; i < calibrationThreshhold; i++){
     photocellReadingL.reading(analogRead(leftPhotocellPin));  
     photocellReadingR.reading(analogRead(rightPhotocellPin));
@@ -84,31 +87,49 @@ void setup(void) {
   rightLightCalibration = rightLightCalibration / calibrationThreshhold;
   
   Serial.begin(9600);
-  photocellReadingL.begin();
-  photocellReadingR.begin();
+  Serial.println(leftLightCalibration);
+  Serial.println(rightLightCalibration);
+  
   
 }
  
 void loop(void) {
-  photocellReadingL.reading(analogRead(leftPhotocellPin));  
-  photocellReadingR.reading(analogRead(rightPhotocellPin));
-
-  int rightReading = photocellReadingR.getAvg();
-  int leftReading = photocellReadingL.getAvg();
-
-  spdR = 0;
-  spdL = 0;
-
-  // ???
-  if (rightReading > rightLightCalibration){
-    spdR = -(photocellReadingR.getAvg()-rightLightCalibration)/speedFilterFactor;
-  }
-  if (leftReading > leftLightCalibration){
-    spdL = -(photocellReadingL.getAvg()-leftLightCalibration)/speedFilterFactor;
-  }
+  for (int i = 0; i < calibrationThreshhold; i++){
+    photocellReadingL.reading(analogRead(leftPhotocellPin));  
+    photocellReadingR.reading(analogRead(rightPhotocellPin));
   
-  spdR = spdR*speedGain + baseSpeed;
-  spdL = spdL*speedGain + baseSpeed;
+    int rightReading = photocellReadingR.getAvg();
+    int leftReading = photocellReadingL.getAvg();
+    calibrateLight(rightReading, leftReading);
+  }
+
+  leftLightCalibration = leftLightCalibration / calibrationThreshhold;
+  rightLightCalibration = rightLightCalibration / calibrationThreshhold;
+  
+  Serial.print(leftLightCalibration);
+  Serial.print('\t');
+  Serial.println(rightLightCalibration);
+
+  delay(2000);
+//  photocellReadingL.reading(analogRead(leftPhotocellPin));  
+//  photocellReadingR.reading(analogRead(rightPhotocellPin));
+//
+//  int rightReading = photocellReadingR.getAvg();
+//  int leftReading = photocellReadingL.getAvg();
+//
+//  spdR = 0;
+//  spdL = 0;
+//
+//  // ???
+//  if (rightReading > rightLightCalibration){
+//    spdR = -(photocellReadingR.getAvg()-rightLightCalibration)/speedFilterFactor;
+//  }
+//  if (leftReading > leftLightCalibration){
+//    spdL = -(photocellReadingL.getAvg()-leftLightCalibration)/speedFilterFactor;
+//  }
+//  
+//  spdR = spdR*speedGain + baseSpeed;
+//  spdL = spdL*speedGain + baseSpeed;
 
 //  Serial.print(photocellReadingL.getAvg());
 //  Serial.print(" \t ");
