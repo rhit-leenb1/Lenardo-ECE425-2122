@@ -1,8 +1,14 @@
+//Wall following function with light homing subfunction
 // Description:
 // This program is used to make the robot have Follow-Wall behavior for Lab3. The PD control is used to control the robot speed and direction.
 // Basic logic of this program is to use one state machine to change the behavior of the robot according to the sensor readings
 // The robot will be able to maintain a distance between 4 and 6 inches from the wall (actual range is 5 to 7 inches to provide bigger turning space)
 // The program is a modular program with different levels. Modifications is required for upper level functions.
+// Light homing function is added into the upper level function
+// The light function will start working when photosensor detects the light source
+// The robot will point to the light source and go forward
+// When the IR sensor detects obstacles, the robot will stop and return to homing starting point
+// Normally the robot will be in wall following mode.
 // Authors: Nathan Lee   Shantao Cao
 // Date: 1/16/2022
 
@@ -66,8 +72,8 @@ NewPing sonarRt(snrRight, snrRight);  //create an instance of the right sonar
 
 
 #define irThresh    13 // The IR threshold for presence of an obstacle in ADC value
-#define irMax    7
-#define irMin    5
+#define irMax    7      // IR max threshold
+#define irMin    5      // IR min threshold
 #define snrThresh   60  // The sonar threshold for presence of an obstacle in cm
 #define snrThreshmid   15  // The sonar midian threshold for presence of an obstacle in cm
 #define snrThreshmin   10  // The sonar minimum threshold for presence of an obstacle in cm
@@ -81,15 +87,13 @@ NewPing sonarRt(snrRight, snrRight);  //create an instance of the right sonar
 #define irRight A12   //right IR analog pin
 #define irLeft A11   //left IR analog pin
 
-const int irListSize = 3;
+const int irListSize = 3;           // averaging number
 movingAvg irFrontList(irListSize);  //variable to holds list of last front IR reading
 movingAvg irLeftList(irListSize);   //variable to holds list of last left IR reading
 movingAvg irRearList(irListSize);   //variable to holds list of last rear IR reading
 movingAvg irRightList(irListSize);   //variable to holds list of last right IR reading
 
-//Front, back, left right ir sensor average value 
-
-
+//store front, back, left right, ir sensor value and average value 
 float inirF = 0;
 float inirB = 0;
 float inirL = 0;
@@ -179,20 +183,24 @@ int cturns = 0; //
 boolean leftwall = false; //wall follow left
 boolean rightwall = false; // wall follow right
 
-//light homing
-  int rightReading;
-  int leftReading;
-  int sumReading;
-  int prevsumReading = 0;
+//light homing 
 
-  int nturns;
-  int nsteps;
+#define phLeft   14   //front left sonar 
+#define phRight  15  //front right sonar 
+
+  int rightReading;   //right photosensor reading
+  int leftReading;    //left photosensor reading
+  int sumReading;     //sum of photosensor readings
+  int prevsumReading = 0;   // record last sum reading
+
+  int nturns;         // store number of turns
+  int nsteps;         // store number of steps
   
-  boolean Light = false;
-  boolean straight = false;
-  boolean PL = false;
-  boolean PR = false;
-  boolean midlight = false;
+  boolean Light = false;    //Light interrupt
+//  boolean straight = false;  
+  boolean PL = false;       // Photosensor left detected
+  boolean PR = false;       // Photosensor right detected
+  boolean midlight = false;   // point to the light detected
 
 int photocellPin1 = 15;     // the cell and 10K pulldown are connected to a0
 int photocellPin2 = 14;     // the cell and 10K pulldown are connected to a0
@@ -288,10 +296,12 @@ void loop() {
         //spin(-45);
         //forward(300,200);
         spin(90);
+        forward(-300,200);
       } else {
         //spin(45);
         //forward(200,200);
         spin(-90);
+        forward(-200,200);
       }
       //should have the wall in the same side
       //change back to original state
@@ -342,23 +352,25 @@ void loop() {
       forward(-800,200);
       spin(90);
     }
-  }else if(Light == true){
-    stop();
+  }else if(Light == true){  //Light homing level
+    stop();                     //stop and turn on LEDs
     digitalWrite(grnLED, LOW);
     digitalWrite(ylwLED, LOW);
     digitalWrite(redLED, LOW);
     delay(500);
     digitalWrite(ylwLED, HIGH);
+    //find turnning direction and turn to the light source
+    // record turns for return movement
     if (PL == true){
       for (int n = 0; n < 180; n++){
-        spin(-2);
+        spin(-2);     //spin 2 degrees everytime
         delay(100);
-        nturns = nturns-1;
-        if(midlight == true){
+        nturns = nturns-1;    // recored turns
+        if(midlight == true){   // break when point to the light
           break;
         }
       }
-    }else if(PR == true){
+    }else if(PR == true){   //same as left 
         for (int n = 0; n < 180; n++){
         spin(2);
         delay(100);
@@ -383,24 +395,32 @@ void loop() {
 //    }
     stop();
     delay(500);
+
+    // go forward and stop when detect obstacle
     for(int n = 0; n < 2000; n++){
       if(inirF > 4.5){
-        forward(-qrtr_rot,robot_spd);
-        nsteps = nsteps+1;
+        forward(-qrtr_rot,robot_spd);   // forward 1/4 revolution every time
+        nsteps = nsteps+1;              // record steps
       }else if(inirF <= 4.5){
-        break;
+        break;              // break when obstacle detected
       }
     }
+    //trun LEDs on 
     digitalWrite(ylwLED, LOW);
     digitalWrite(redLED, HIGH);
     stop();
+    // point back to the starting point
     delay(1000);
     spin(180);
     delay(100);
+    // go forward for n steps
     reverse(nsteps*qrtr_rot,robot_spd);
+    // spin for n*2degrees
     spin(nturns*1.75);
+    //spin back on track
     spin(180);
     stop();
+    //reset booleans, turns and steps
     midlight = false;
     Light = false;
     PL = false;
@@ -437,6 +457,8 @@ void stop() {
   stepperLeft.stop();//stopleft
 }
 
+
+// reverse function to go backward
 void reverse(int rot, int spd) {
     forward(-rot, spd);
 }
@@ -910,17 +932,18 @@ void updateError() {
 //    Serial.print("\right derror\t"); Serial.println(right_derror);
 }
 
+// function to update the left and right photosensors
 void updateLight(){
-  rightReading= 0;
-  leftReading=0;
-  photocellReadingL.reading(analogRead(14));  
-  photocellReadingR.reading(analogRead(15));
+  rightReading= 0;    //reset right photosensor reading
+  leftReading=0;      //reset left photosensor reading
+  photocellReadingL.reading(analogRead(phLeft));  //read left and right data and get averaged value
+  photocellReadingR.reading(analogRead(phright));
 
-  rightReading = photocellReadingR.getAvg()-20;
+  rightReading = photocellReadingR.getAvg()-20; //calibrate readings
   leftReading = photocellReadingL.getAvg();
-  sumReading = rightReading+leftReading;
+  sumReading = rightReading+leftReading;  //sum readings for light centering detection
 
-
+//  check whether the light source is detected
   if (rightReading > 260){
     PR = true;
     Light = true;
@@ -935,19 +958,16 @@ void updateLight(){
 //  else{
 //    PR = false;
 //  }
-//  if (sumReading-prevsumReading < -3){
-//    midlight = true;
-//  }
-if (sumReading-prevsumReading < -3){
+
+// test whether the robot is directly point to the light
+if (sumReading-prevsumReading < -3&&prevsumReading>500){
   if(rightReading-leftReading<3||rightReading-leftReading>-3){
       midlight = true;
   }
 
 }
-//  else{
-//    midlight = false;
-//  }
-  
+
+// send readings to serial output
 
   Serial.print(rightReading);
   Serial.print(" \t ");
@@ -960,5 +980,6 @@ if (sumReading-prevsumReading < -3){
   Serial.print(midlight);
   Serial.println(" \t ");
 
+  //save old readings
   prevsumReading = sumReading;
 }
