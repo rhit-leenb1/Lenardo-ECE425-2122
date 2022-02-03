@@ -19,7 +19,7 @@ classdef MobileGUI < matlab.mixin.SetGet
         function pathPlanned = topPathPlan(obj, mapText, start, goal)
             obj.Map = mapText;
             obj.maplength = size(obj.Map);
-            Amap = ones(obj.maplength(1), obj.maplength(2))*100;
+            Amap = ones(obj.maplength(1), obj.maplength(2))*-1;
             Amap(start(1),start(2)) = -99;
             Amap(goal(1),goal(2)) = 0;
             Amap = obj.distanceMapping(Amap,goal(1),goal(2),0);
@@ -37,20 +37,18 @@ classdef MobileGUI < matlab.mixin.SetGet
                 return 
             end
             
-            if Amap(x,y) == -99 
+            if Amap(x,y) == -99
                 AmapReturn = Amap;
                 return 
             end
+            Amap(x,y) = 100;
             
-            if Amap(x,y) == 100 || Amap(x,y) == 0
-                Amap = obj.distanceMapping(Amap,x+1,y,value+1);
-                Amap = obj.distanceMapping(Amap,x-1,y,value+1);
-                Amap = obj.distanceMapping(Amap,x,y+1,value+1);
-                Amap = obj.distanceMapping(Amap,x,y-1,value+1);
-            end
-            if Amap(x,y) > value 
-                Amap(x,y) = value;
-            end
+            Amap = obj.distanceMapping(Amap,x+1,y,value+1);
+            Amap = obj.distanceMapping(Amap,x-1,y,value+1);
+            Amap = obj.distanceMapping(Amap,x,y+1,value+1);
+            Amap = obj.distanceMapping(Amap,x,y-1,value+1);
+            
+            Amap(x,y) = value;
             AmapReturn = Amap;
         end
         
