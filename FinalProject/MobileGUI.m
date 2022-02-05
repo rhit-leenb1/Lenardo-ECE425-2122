@@ -4,9 +4,8 @@ classdef MobileGUI < matlab.mixin.SetGet
     
     properties
         LEOserial
-        MapPath
-        maplength
         Map
+        maplength
     end
     
     methods
@@ -16,13 +15,33 @@ classdef MobileGUI < matlab.mixin.SetGet
            % obj.LEOserial = serialport(portStr, baudrate);
         end
         
+        function Run(obj, path)
+            for direction = path
+                if direction == 'S'
+                    fprintf("\nStarting\n");
+                    writeline(obj.LEOserial,'Start')
+                elseif direction == 'R'
+                    fprintf("Turning Right\n");
+                elseif direction == 'L'
+                    fprintf("Turning Left\n");
+                elseif direction == 'U'
+                    fprintf("Turning Around\n");
+                elseif direction == 'T'
+                    fprintf("Terminate\n");
+                end
+                
+                read = readline(obj.LEOserial);
+                fprintf("%s",read);
+            end
+        end
+        
         function pathPlanned = topPathPlan(obj, mapText, start, goal)
             obj.Map = mapText;
             obj.maplength = size(obj.Map);
             
             % using wavefront planning / A* / dijkstra path planning for
             % distances of map
-            Amap = ones(obj.maplength(1), obj.maplength(2))*99;
+            Amap = ones(obj.maplength(1), obj.maplength(2))*98;
             visitedNodes = zeros(obj.maplength(1), obj.maplength(2));
             Amap(start(2),start(1)) = norm(obj.maplength)^2; % need to transpose xy
             Amap(goal(2),goal(1)) = 0; % need to transpose xy
@@ -33,152 +52,125 @@ classdef MobileGUI < matlab.mixin.SetGet
             
         end
         
+        % Plan a path from a wavefront planning map
         function plannedPath = topologicalPath(obj, Amap,x,y)
-            plannedPath = "S";
+            plannedPath = "S"; %Start pathing
             currentValue = Amap(x,y);
-            facingDirection = "N";
+            facingDirection = "N"; %assuming robot facing North
             
             while currentValue > 0
-                if facingDirection == "N"
-                    if y > 1
-                        if Amap(x,y-1)<currentValue 
-                            y = y-1;
+                if facingDirection == "N" %check if robot is facing North
+                    if y > 1 %checking West (turn left)
+                        if Amap(x,y-1)<currentValue && ~(bitand(obj.Map(x,y),0b1000))
                             facingDirection = "W";
                             plannedPath = plannedPath + "L";
-                            currentValue = Amap(x,y);
                         end
                     end
-                    if  x > 1
-                        if Amap(x-1,y)<currentValue
+                    if  x > 1 %checking North (straight)
+                        if Amap(x-1,y)<currentValue && ~(bitand(obj.Map(x,y),0b0001))
                             x = x-1;
                             currentValue = Amap(x,y);
                         end
                     end
-                    if  x < obj.maplength(1)
-                        if Amap(x+1,y)<currentValue
-                            Amap(x,y) = currentValue;
-                            x = x+1;
+                    if  x < obj.maplength(1) %checking South (turn around)
+                        if Amap(x+1,y)<currentValue && ~(bitand(obj.Map(x,y),0b0100))
                             facingDirection = "S";
                             plannedPath = plannedPath + "U";
-                            currentValue = Amap(x,y);
                         end
                     end
-                    if  y < obj.maplength(2)
-                        if Amap(x,y+1)<currentValue
-                             y = y+1;
+                    if  y < obj.maplength(2) %checking East (turn right)
+                        if Amap(x,y+1)<currentValue && ~(bitand(obj.Map(x,y),0b0010))
                              facingDirection = "E";
                              plannedPath = plannedPath + "R";
-                             currentValue = Amap(x,y);
                         end
                     end
                 end
                 
-                if facingDirection == "S"
-                    if y > 1
-                        if Amap(x,y-1)<currentValue
-                            y = y-1;
+                if facingDirection == "S" %checking if robot is facing South
+                    if y > 1 %checking West (turn right)
+                        if Amap(x,y-1)<currentValue && ~(bitand(obj.Map(x,y),0b1000))
                             facingDirection = "W";
                             plannedPath = plannedPath + "R";
-                            currentValue = Amap(x,y);
                         end
                     end
-                    if  x < obj.maplength(1)
-                        if Amap(x+1,y)<currentValue
+                    if  x < obj.maplength(1) %checking South (straight)
+                        if Amap(x+1,y)<currentValue && ~(bitand(obj.Map(x,y),0b0100))
                             x = x+1;
                             currentValue = Amap(x,y);
                         end
                     end
-                    if  x > 1
-                        if Amap(x-1,y)<currentValue
-                            Amap(x,y) = currentValue;
-                            x = x-1;
+                    if  x > 1 %checking North (turn around)
+                        if Amap(x-1,y)<currentValue && ~(bitand(obj.Map(x,y),0b0001))
                             facingDirection = "N";
                             plannedPath = plannedPath + "U";
-                            currentValue = Amap(x,y);
                         end
                     end
-                    if  y < obj.maplength(2)
-                        if Amap(x,y+1)<currentValue
-                            y = y+1;
+                    if  y < obj.maplength(2) %checking East (turn left)
+                        if Amap(x,y+1)<currentValue && ~(bitand(obj.Map(x,y),0b0010))
                             facingDirection = "E";
                             plannedPath = plannedPath + "L";
-                            currentValue = Amap(x,y);
                         end    
                     end    
                 end
                 
-                if facingDirection == "W"
-                    if x > 1
-                        if Amap(x-1,y)<currentValue
-                            x = x-1;
+                if facingDirection == "W" %checking if robot facing West
+                    if x > 1 %checking North (turn right)
+                        if Amap(x-1,y)<currentValue && ~(bitand(obj.Map(x,y),0b0001))
                             facingDirection = "N";
                             plannedPath = plannedPath + "R";
-                            currentValue = Amap(x,y);
                         end
                     end
-                    if  y > 1
+                    if  y > 1 %checking West (straight)
                         if Amap(x,y-1)<currentValue
                             y = y-1;
                             currentValue = Amap(x,y);
                         end
                     end
-                    if  y < obj.maplength(2)
-                        if Amap(x,y+1)<currentValue
-                            Amap(x,y) = currentValue;
-                            y = y+1;
+                    if  y < obj.maplength(2) %checking East (turn around)
+                        if Amap(x,y+1)<currentValue && ~(bitand(obj.Map(x,y),0b0010))
                             facingDirection = "E";
                             plannedPath = plannedPath + "U";
-                            currentValue = Amap(x,y);
                         end
                     end
-                    if  x < obj.maplength(2)
-                        if Amap(x+1,y)<currentValue
-                            x = x+1;
+                    if  x < obj.maplength(2) %checking South (turn left)
+                        if Amap(x+1,y)<currentValue && ~(bitand(obj.Map(x,y),0b0100))
                             facingDirection = "S";
                             plannedPath = plannedPath + "L";
-                            currentValue = Amap(x,y);    
                         end
                     end
                 end
                 
                 
-                if facingDirection == "E"
-                    if x > 1
-                        if Amap(x-1,y)<currentValue
-                            x = x-1;
+                if facingDirection == "E" %checking if robot facing East
+                    if x > 1 %checking North (turn left)
+                        if Amap(x-1,y)<currentValue && ~(bitand(obj.Map(x,y),0b0001))
                             facingDirection = "N";
                             plannedPath = plannedPath + "L";
-                            currentValue = Amap(x,y);
                         end
                     end
-                    if  y < obj.maplength(2)
-                        if Amap(x,y+1)<currentValue
+                    if  y < obj.maplength(2) %checking East (straight)
+                        if Amap(x,y+1)<currentValue && ~(bitand(obj.Map(x,y),0b0010))
                             y = y+1;
                             currentValue = Amap(x,y);
                         end
                     end
-                    if  y > 1
-                        if Amap(x,y-1)<currentValue
-                            Amap(x,y) = currentValue;
-                            y = y-1;
+                    if  y > 1 %checking West (turn around)
+                        if Amap(x,y-1)<currentValue && ~(bitand(obj.Map(x,y),0b1000))
                             facingDirection = "W";
                             plannedPath = plannedPath + "U";
-                            currentValue = Amap(x,y);
                         end
                     end
-                    if  x < obj.maplength(2)      
-                        if Amap(x+1,y)<currentValue   
-                            x = x+1; 
+                    if  x < obj.maplength(2) %checking South (turn right)     
+                        if Amap(x+1,y)<currentValue && ~(bitand(obj.Map(x,y),0b0100)) 
                             facingDirection = "S";
                             plannedPath = plannedPath + "R";     
-                            currentValue = Amap(x,y);
                         end
                     end
                 end
             end
-            plannedPath = plannedPath + "T";
+            plannedPath = plannedPath + "T"; %Terminate pathing
             
-            
+            plannedPath = convertStringsToChars(plannedPath); %convert String to char array
         end
         
         function AmapReturn = distanceMapping(obj, Amap, x, y, distance,visitedNodes)
