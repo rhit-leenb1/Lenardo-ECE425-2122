@@ -15,27 +15,29 @@ classdef MobileGUI < matlab.mixin.SetGet
            % obj.LEOserial = serialport(portStr, baudrate);
         end
         
-        function Run(obj, path)
-            for direction = path
-                if direction == 'S'
-                    fprintf("\nStarting\n");
-                    writeline(obj.LEOserial,'Start')
-                elseif direction == 'R'
-                    fprintf("Turning Right\n");
-                elseif direction == 'L'
-                    fprintf("Turning Left\n");
-                elseif direction == 'U'
-                    fprintf("Turning Around\n");
-                elseif direction == 'T'
-                    fprintf("Terminate\n");
-                end
-                
-                read = readline(obj.LEOserial);
-                fprintf("%s",read);
+        function response = topoRun(obj, direction)
+            if direction == 'S'
+                fprintf("\nStarting\n");
+                %writeline(obj.LEOserial,'Start')
+            elseif direction == 'R'
+                fprintf("Turning Right\n");
+                %writeline(obj.LEOserial,'Right')
+            elseif direction == 'L'
+                %writeline(obj.LEOserial,'Left')
+                fprintf("Turning Left\n");
+            elseif direction == 'U'
+                fprintf("Turning Around\n");
+                %writeline(obj.LEOserial,'Around')
+            elseif direction == 'T'
+                fprintf("Terminate\n");
+                %writeline(obj.LEOserial,'Terminate')
             end
+            
+            %response = readline(obj.LEOserial);
+            response = [1 4];
         end
         
-        function pathPlanned = topPathPlan(obj, mapText, start, goal)
+        function pathPlanned = pathPlan(obj, mapText, start, goal)
             obj.Map = mapText;
             obj.maplength = size(obj.Map);
             
