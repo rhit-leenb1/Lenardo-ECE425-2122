@@ -11,7 +11,7 @@ char offChar = 66;
 
 void setup()  
 {  
-  Serial.begin(115200);                      //set baud rate of module (115200 on com9)
+  Serial.begin(115200);                      //set baud rate of module (115200 on com?)
   pinMode(LED, OUTPUT);
   while (!Serial) 
   {

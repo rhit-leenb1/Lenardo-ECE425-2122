@@ -6,7 +6,10 @@
 #include <MultiStepper.h>//include multiple stepper motor library
 #include <movingAvg.h>
 #include <TimerOne.h>
+#include <basicMPU6050.h> 
 
+// Create instance
+basicMPU6050<> imu;
 
 const int rtStepPin = 50; //right stepper motor step pin
 const int rtDirPin = 51;  // right stepper motor direction pin
@@ -27,9 +30,12 @@ AccelStepper stepperRight(AccelStepper::DRIVER, rtStepPin, rtDirPin);//create in
 AccelStepper stepperLeft(AccelStepper::DRIVER, ltStepPin, ltDirPin);//create instance of left stepper motor object (2 driver pins, step pin 50, direction input pin 51)
 MultiStepper steppers;//create instance to control multiple steppers at the same time
 
+String readLine;
+String stringCom;
+uint16_t dist;
 
-int spdR = 0;
-int spdL = 0;
+int spdR = 00;
+int spdL = 00;
 int baseSpeed = 200;
 int speedFilterFactor = 100; // filters anything smaller than 100 because int cut off
 int speedGain = 100;
@@ -37,9 +43,6 @@ int speedGain = 100;
 int max_spd = 2000;
 int max_accel = 1000;
 
-int photocellPin = 15;     // the cell and 10K pulldown are connected to a0
-movingAvg photocellReadingL(10);     // the analog reading from the sensor divider
-movingAvg photocellReadingR(10);     // the analog reading from the sensor divider
 
 void setup(void) {
 
@@ -58,91 +61,108 @@ void setup(void) {
   stepperRight.setAcceleration(max_accel);//set desired acceleration in steps/s^2
   stepperLeft.setMaxSpeed(max_spd);//set the maximum permitted speed limited by processor and clock speed, no greater than 4000 steps/sec on Arduino
   stepperLeft.setAcceleration(max_accel);//set desired acceleration in steps/s^2
-  stepperRight.setSpeed(0);//set right motor speed
-  stepperLeft.setSpeed(0);//set left motor speed
+  stepperRight.setSpeed(spdR);//set right motor speed
+  stepperLeft.setSpeed(spdL);//set left motor speed
 
   steppers.addStepper(stepperRight);//add right motor to MultiStepper
   steppers.addStepper(stepperLeft);//add left motor to MultiStepper
   digitalWrite(stepperEnable, stepperEnTrue);//turns on the stepper motor driver
   digitalWrite(enableLED, HIGH);//turn on enable LED
+  
+  // Set registers - Always required
+  imu.setup();
 
-  Timer1.initialize(1200);         // initialize timer1, and set a timer_int second period
-  Timer1.attachInterrupt(runAtSpeed);  // attaches updateIR() as a timer overflow interrupt
+  // Initial calibration of gyro
+//  imu.setBias();
+
+  
+  Timer1.initialize(1000);         // initialize timer1, and set a timer_int second period
+  Timer1.attachInterrupt(runAtSpeedToPosition);  // attaches updateIR() as a timer overflow interrupt
   
   Serial.begin(115200);
-  photocellReadingL.begin();
-  photocellReadingR.begin();
+
   
 }
  
-void loop(void) {
-//  photocellReadingL.reading(analogRead(14));  
-//  photocellReadingR.reading(analogRead(15));
-//
-//  int rightReading = photocellReadingR.getAvg();
-//  int leftReading = photocellReadingL.getAvg();
-//
-//  spdR = 0;
-//  spdL = 0;
-//
-//  // ???
-//  if (rightReading > 220){
-//    spdR = -(photocellReadingR.getAvg()-220)/speedFilterFactor;
-//  }
-//  if (leftReading > 320){
-//    spdL = -(photocellReadingL.getAvg()-320)/speedFilterFactor;
-//  }
-//  
-//  spdR = spdR*speedGain + baseSpeed;
-//  spdL = spdL*speedGain + baseSpeed;
-//
-//  Serial.print(photocellReadingL.getAvg());
-//  Serial.print(" \t ");
-//  Serial.print(photocellReadingR.getAvg());
-//  Serial.print(" \t ");
-//  Serial.print(spdL);
-//  Serial.print(" \t ");
-//  Serial.println(spdR);
-
-  updatereading();
+void loop() {
+  //updatereading();
+  if (Serial.available()){   
+        readLine = Serial.readString();
+        stringCom = readLine.substring(0,1);
+        dist = readLine.substring(1,readLine.length()).toInt();
+        if (stringCom == "F"){
+          forward(dist);
+        }
+        if (stringCom == "S"){
+          forward(dist);
+        }
+        Serial.print(stringCom);
+        Serial.print("\t");
+        Serial.println(dist);
+        Serial.println("");
+        delay(1000);
+  }
+  
 }
 
 
-void runAtSpeed () {
-  stepperRight.setSpeed(spdR);
-  stepperLeft.setSpeed(spdL);
-  while(stepperRight.runSpeed() || stepperLeft.runSpeed()){
+void forward(int distance) {
+  // inches
+ 
+  long stepsToTake = 800*distance/(PI*3.375); //calculate how many steps to go to distance
+  stepperRight.move(stepsToTake);//move one full rotation forward relative to current position
+  stepperLeft.move(stepsToTake);//move one full rotation forward relative to current position
+  stepperRight.setMaxSpeed(500);//set right motor speed
+  stepperLeft.setMaxSpeed(500);//set left motor speed
+  runAtSpeedToPosition(); //run both stepper to set position
+  runToStop();//run until the robot reaches the target
+}
+
+void runToStop ( void ) {
+  int runNow = 1;
+  int rightStopped = 0;
+  int leftStopped = 0;
+
+  while (runNow) {
+    if (!stepperRight.run()) {
+      rightStopped = 1;
+      stepperRight.stop();//stop right motor
+    }
+    if (!stepperLeft.run()) {
+      leftStopped = 1;
+      stepperLeft.stop();//stop ledt motor
+    }
+    if (rightStopped && leftStopped) {
+      runNow = 0;
+    }
   }
-  
+}
+
+/*function to run both wheels to a position at speed*/
+void runAtSpeedToPosition() {
+  stepperRight.runSpeedToPosition();
+  stepperLeft.runSpeedToPosition();
 }
 
 void updatereading(){
-    photocellReadingL.reading(analogRead(14));  
-  photocellReadingR.reading(analogRead(15));
-
-  int rightReading = photocellReadingR.getAvg();
-  int leftReading = photocellReadingL.getAvg();
-
-  spdR = 0;
-  spdL = 0;
-
-  // ???
-  if (rightReading > 220){
-    spdR = -(photocellReadingR.getAvg()-220)/speedFilterFactor;
-  }
-  if (leftReading > 320){
-    spdL = -(photocellReadingL.getAvg()-320)/speedFilterFactor;
-  }
+  // Update gyro calibration 
+  imu.updateBias();
+ 
+  //-- Scaled and calibrated output:
+  // Accel
+  Serial.print( imu.ax() );
+  Serial.print( " " );
+  Serial.print( imu.ay() );
+  Serial.print( " " );
+  Serial.print( imu.az() );
+  Serial.print( "    " );
   
-  spdR = spdR*speedGain + baseSpeed;
-  spdL = spdL*speedGain + baseSpeed;
-
-  Serial.print(photocellReadingL.getAvg());
-  Serial.print(" \t ");
-  Serial.print(photocellReadingR.getAvg());
-  Serial.print(" \t ");
-  Serial.print(spdL);
-  Serial.print(" \t ");
-  Serial.println(spdR);
+  // Gyro
+  Serial.print( imu.gx() );
+  Serial.print( " " );
+  Serial.print( imu.gy() );
+  Serial.print( " " );
+  Serial.print( imu.gz() );
+  Serial.println( "    " );  
 
 }
