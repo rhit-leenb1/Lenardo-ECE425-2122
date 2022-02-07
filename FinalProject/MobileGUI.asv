@@ -41,13 +41,13 @@ classdef MobileGUI < matlab.mixin.SetGet
                 fprintf("\nStarting\n");
             elseif command == 'F'
                 fprintf("Forward\n");
-                if mod(robotPoint(3),4) == 0
+                if robotPoint(3) == 0
                     robotPoint(2) = robotPoint(2) - 1;
-                elseif mod(robotPoint(3),4) == 1
+                elseif robotPoint(3) == 1
                     robotPoint(1) = robotPoint(1) + 1;
-                elseif mod(robotPoint(3),4) == 2
+                elseif robotPoint(3) == 2
                     robotPoint(2) = robotPoint(2) + 1;
-                elseif mod(robotPoint(3),4) == 3
+                elseif robotPoint(3) == 3
                     robotPoint(1) = robotPoint(1) - 1;
                 end
                     
@@ -97,6 +97,7 @@ classdef MobileGUI < matlab.mixin.SetGet
             elseif mod(direction,4) == 3
                 facingDirection = "W";
             end
+            checkedBlock = 0;
             
             while currentValue > 0
                 if facingDirection == "N" %check if robot is facing North
@@ -104,6 +105,7 @@ classdef MobileGUI < matlab.mixin.SetGet
                         if Amap(x,y-1)<currentValue && ~(bitand(obj.Map(x,y),0b1000))
                             facingDirection = "W";
                             plannedPath = plannedPath + "L";
+                            checkedBlock = 1;
                         end
                     end
                     if  x > 1 %checking North (straight)
@@ -111,18 +113,21 @@ classdef MobileGUI < matlab.mixin.SetGet
                             x = x-1;
                             currentValue = Amap(x,y);
                             plannedPath = plannedPath + "F";
+                            checkedBlock = 1;
                         end
                     end
                     if  x < obj.maplength(1) %checking South (turn around)
                         if Amap(x+1,y)<currentValue && ~(bitand(obj.Map(x,y),0b0100))
                             facingDirection = "S";
                             plannedPath = plannedPath + "U";
+                            checkedBlock = 1;
                         end
                     end
                     if  y < obj.maplength(2) %checking East (turn right)
                         if Amap(x,y+1)<currentValue && ~(bitand(obj.Map(x,y),0b0010))
                              facingDirection = "E";
                              plannedPath = plannedPath + "R";
+                             checkedBlock = 1;
                         end
                     end
                 end
@@ -132,6 +137,7 @@ classdef MobileGUI < matlab.mixin.SetGet
                         if Amap(x,y-1)<currentValue && ~(bitand(obj.Map(x,y),0b1000))
                             facingDirection = "W";
                             plannedPath = plannedPath + "R";
+                            checkedBlock = 1;
                         end
                     end
                     if  x < obj.maplength(1) %checking South (straight)
@@ -139,18 +145,21 @@ classdef MobileGUI < matlab.mixin.SetGet
                             x = x+1;
                             currentValue = Amap(x,y);
                             plannedPath = plannedPath + "F";
+                            checkedBlock = 1;
                         end
                     end
                     if  x > 1 %checking North (turn around)
                         if Amap(x-1,y)<currentValue && ~(bitand(obj.Map(x,y),0b0001))
                             facingDirection = "N";
                             plannedPath = plannedPath + "U";
+                            checkedBlock = 1;
                         end
                     end
                     if  y < obj.maplength(2) %checking East (turn left)
                         if Amap(x,y+1)<currentValue && ~(bitand(obj.Map(x,y),0b0010))
                             facingDirection = "E";
                             plannedPath = plannedPath + "L";
+                            checkedBlock = 1;
                         end    
                     end    
                 end
@@ -160,35 +169,40 @@ classdef MobileGUI < matlab.mixin.SetGet
                         if Amap(x-1,y)<currentValue && ~(bitand(obj.Map(x,y),0b0001))
                             facingDirection = "N";
                             plannedPath = plannedPath + "R";
+                            checkedBlock = 1;
                         end
                     end
                     if  y > 1 %checking West (straight)
-                        if Amap(x,y-1)<currentValue && ~(bitand(obj.Map(x,y),0b1000))
+                        if Amap(x,y-1)<currentValue
                             y = y-1;
                             currentValue = Amap(x,y);
                             plannedPath = plannedPath + "F";
+                            checkedBlock = 1;
                         end
                     end
                     if  y < obj.maplength(2) %checking East (turn around)
                         if Amap(x,y+1)<currentValue && ~(bitand(obj.Map(x,y),0b0010))
                             facingDirection = "E";
                             plannedPath = plannedPath + "U";
+                            checkedBlock = 1;
                         end
                     end
                     if  x < obj.maplength(2) %checking South (turn left)
                         if Amap(x+1,y)<currentValue && ~(bitand(obj.Map(x,y),0b0100))
                             facingDirection = "S";
                             plannedPath = plannedPath + "L";
+                            checkedBlock = 1;
                         end
                     end
                 end
                 
                 
                 if facingDirection == "E" %checking if robot facing East
-                    if x > 1 %checking North (turn left)
+                    if x > 1 && checkedBlock == 0 %checking North (turn left)
                         if Amap(x-1,y)<currentValue && ~(bitand(obj.Map(x,y),0b0001))
                             facingDirection = "N";
                             plannedPath = plannedPath + "L";
+                            checkedBlock = 1;
                         end
                     end
                     if  y < obj.maplength(2) %checking East (straight)
@@ -196,21 +210,25 @@ classdef MobileGUI < matlab.mixin.SetGet
                             y = y+1;
                             currentValue = Amap(x,y);
                             plannedPath = plannedPath + "F";
+                            checkedBlock = 1;
                         end
                     end
                     if  y > 1 %checking West (turn around)
                         if Amap(x,y-1)<currentValue && ~(bitand(obj.Map(x,y),0b1000))
                             facingDirection = "W";
                             plannedPath = plannedPath + "U";
+                            checkedBlock = 1;
                         end
                     end
                     if  x < obj.maplength(2) %checking South (turn right)     
                         if Amap(x+1,y)<currentValue && ~(bitand(obj.Map(x,y),0b0100)) 
                             facingDirection = "S";
                             plannedPath = plannedPath + "R";
+                            checkedBlock = 1;
                         end
                     end
                 end
+                checkedBlock = 0;
             end
             plannedPath = plannedPath + "T"; %Terminate pathing
             

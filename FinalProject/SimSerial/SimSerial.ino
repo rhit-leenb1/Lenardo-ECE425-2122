@@ -108,7 +108,6 @@ void loop() {
 
 void forward(int distance) {
   // inches
- 
   long stepsToTake = 800*distance/(PI*3.375); //calculate how many steps to go to distance
   stepperRight.move(stepsToTake);//move one full rotation forward relative to current position
   stepperLeft.move(stepsToTake);//move one full rotation forward relative to current position
@@ -116,6 +115,30 @@ void forward(int distance) {
   stepperLeft.setMaxSpeed(500);//set left motor speed
   runAtSpeedToPosition(); //run both stepper to set position
   runToStop();//run until the robot reaches the target
+}
+
+
+void spin(int angle){
+  long stepsToTake = angle*5.1;//calculate steps to reach the angle
+  
+  if (angle > 0){
+    stepperRight.move(stepsToTake);// set steps(right wheel require more distance to achieve right angle)
+    stepperRight.setMaxSpeed(robot_spd);
+    stepperLeft.move(-stepsToTake); // set steps(left wheel require more distance to achieve right angle)
+    stepperLeft.setMaxSpeed(robot_spd);
+    runAtSpeedToPosition();
+    runToStop();//run until the robot reaches the target
+  }else if (angle < 0){
+    stepperRight.move(stepsToTake);// set steps(right wheel require more distance to achieve right angle)
+    stepperRight.setMaxSpeed(robot_spd);
+    stepperLeft.move(-stepsToTake); // set steps(left wheel require more distance to achieve right angle)
+    stepperLeft.setMaxSpeed(robot_spd);
+    runAtSpeedToPosition();
+    runToStop();//run until the robot reaches the target
+  }else{
+    stepperRight.stop();
+    stepperLeft.stop();
+  }
 }
 
 void runToStop ( void ) {
