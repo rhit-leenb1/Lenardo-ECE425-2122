@@ -12,12 +12,13 @@ classdef MobileGUI < matlab.mixin.SetGet
         function obj = MobileGUI(portNumber,baudrate)
             fprintf('Connecting to robot...');
             portStr = sprintf('COM%d',portNumber);
-            %obj.LEOserial = serialport(portStr, baudrate);
+            obj.LEOserial = serialport(portStr, baudrate);
         end
         
         function response = topoRun(obj, command)
             if command == 'S'
                 fprintf("\nStarting\n");
+                writeline(obj.LEOserial,'Starting')
             elseif command == 'R'
                 fprintf("Turning Right\n");
                  writeline(obj.LEOserial,'S -95')
@@ -32,8 +33,8 @@ classdef MobileGUI < matlab.mixin.SetGet
                 writeline(obj.LEOserial,'Terminate')
             end
             
-            response = readline(obj.LEOserial);
-            %response = [1 4];
+            response = readline(obj.LEOserial)
+            response = [1 4];
         end
         
         function response = topoRunDUMMY(obj, command, robotPoint)
@@ -110,7 +111,7 @@ classdef MobileGUI < matlab.mixin.SetGet
                         if Amap(x-1,y)<currentValue && ~(bitand(obj.Map(x,y),0b0001))
                             x = x-1;
                             currentValue = Amap(x,y);
-                            plannedPath = plannedPath + "F";
+                            plannedPath = plannedPath;% + "F";
                         end
                     end
                     if  x < obj.maplength(1) %checking South (turn around)
@@ -138,7 +139,7 @@ classdef MobileGUI < matlab.mixin.SetGet
                         if Amap(x+1,y)<currentValue && ~(bitand(obj.Map(x,y),0b0100))
                             x = x+1;
                             currentValue = Amap(x,y);
-                            plannedPath = plannedPath + "F";
+                            plannedPath = plannedPath; %+ "F";
                         end
                     end
                     if  x > 1 %checking North (turn around)
@@ -166,7 +167,7 @@ classdef MobileGUI < matlab.mixin.SetGet
                         if Amap(x,y-1)<currentValue && ~(bitand(obj.Map(x,y),0b1000))
                             y = y-1;
                             currentValue = Amap(x,y);
-                            plannedPath = plannedPath + "F";
+                            plannedPath = plannedPath;% + "F";
                         end
                     end
                     if  y < obj.maplength(2) %checking East (turn around)
@@ -195,7 +196,7 @@ classdef MobileGUI < matlab.mixin.SetGet
                         if Amap(x,y+1)<currentValue && ~(bitand(obj.Map(x,y),0b0010))
                             y = y+1;
                             currentValue = Amap(x,y);
-                            plannedPath = plannedPath + "F";
+                            plannedPath = plannedPath;% + "F";
                         end
                     end
                     if  y > 1 %checking West (turn around)

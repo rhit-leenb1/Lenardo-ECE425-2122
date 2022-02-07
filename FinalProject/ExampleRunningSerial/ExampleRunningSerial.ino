@@ -73,11 +73,11 @@ void setup(void) {
   imu.setup();
 
   // Initial calibration of gyro
-//  imu.setBias();
+  imu.setBias();
 
   
-  Timer1.initialize(1000);         // initialize timer1, and set a timer_int second period
-  Timer1.attachInterrupt(updatereading);  // attaches updateIR() as a timer overflow interrupt
+  //Timer1.initialize(1000);         // initialize timer1, and set a timer_int second period
+  //Timer1.attachInterrupt(updatereading);  // attaches updateIR() as a timer overflow interrupt
   
   Serial.begin(115200);
 
@@ -85,9 +85,11 @@ void setup(void) {
 }
  
 void loop() {
-  //updatereading();
-  if (Serial.available()){   
+  updatereading();
+  
+  if (Serial.available()){  
         readLine = Serial.readString();
+        Serial.println(readLine);
         stringCom = readLine.substring(0,1);
         dist = readLine.substring(1,readLine.length()).toInt();
         if (stringCom == "F"){
@@ -96,10 +98,10 @@ void loop() {
         if (stringCom == "S"){
           forward(dist);
         }
-//        Serial.print(stringCom);
-//        Serial.print("\t");
-//        Serial.println(dist);
-//        Serial.println("");
+        Serial.print(stringCom);
+        Serial.print("\t");
+        Serial.println(dist);
+        Serial.println("");
         //delay(1000);
   }
   

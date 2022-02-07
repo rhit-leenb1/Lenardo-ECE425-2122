@@ -70,14 +70,14 @@ void setup(void) {
   digitalWrite(enableLED, HIGH);//turn on enable LED
   
   // Set registers - Always required
-  imu.setup();
+  //imu.setup();
 
   // Initial calibration of gyro
-//  imu.setBias();
+  //imu.setBias();
 
   
-  Timer1.initialize(1000);         // initialize timer1, and set a timer_int second period
-  Timer1.attachInterrupt(updatereading);  // attaches updateIR() as a timer overflow interrupt
+  //Timer1.initialize(1000);         // initialize timer1, and set a timer_int second period
+  //Timer1.attachInterrupt(updatereading);  // attaches updateIR() as a timer overflow interrupt
   
   Serial.begin(115200);
 
@@ -94,12 +94,12 @@ void loop() {
           forward(dist);
         }
         if (stringCom == "S"){
-          forward(dist);
+          spin(dist);
         }
-//        Serial.print(stringCom);
-//        Serial.print("\t");
-//        Serial.println(dist);
-//        Serial.println("");
+        Serial.print(stringCom);
+        Serial.print("\t");
+        Serial.println(dist);
+        Serial.println("");
         //delay(1000);
   }
   
@@ -123,16 +123,16 @@ void spin(int angle){
   
   if (angle > 0){
     stepperRight.move(stepsToTake);// set steps(right wheel require more distance to achieve right angle)
-    stepperRight.setMaxSpeed(robot_spd);
+    stepperRight.setMaxSpeed(500);
     stepperLeft.move(-stepsToTake); // set steps(left wheel require more distance to achieve right angle)
-    stepperLeft.setMaxSpeed(robot_spd);
+    stepperLeft.setMaxSpeed(500);
     runAtSpeedToPosition();
     runToStop();//run until the robot reaches the target
   }else if (angle < 0){
     stepperRight.move(stepsToTake);// set steps(right wheel require more distance to achieve right angle)
-    stepperRight.setMaxSpeed(robot_spd);
+    stepperRight.setMaxSpeed(500);
     stepperLeft.move(-stepsToTake); // set steps(left wheel require more distance to achieve right angle)
-    stepperLeft.setMaxSpeed(robot_spd);
+    stepperLeft.setMaxSpeed(500);
     runAtSpeedToPosition();
     runToStop();//run until the robot reaches the target
   }else{
