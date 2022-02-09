@@ -72,7 +72,7 @@ NewPing sonarRt(snrRight, snrRight);  //create an instance of the right sonar
 #define snrMax   15               // sonar maximum threshold for wall (use a deadband of 4 to 6 inches)
 
 
-#define irThresh    13 // The IR threshold for presence of an obstacle in ADC value
+#define irThresh    8 // The IR threshold for presence of an obstacle in ADC value
 #define irMax    7      // IR max threshold
 #define irMin    5      // IR min threshold
 #define snrThresh   60  // The sonar threshold for presence of an obstacle in cm
@@ -501,14 +501,14 @@ if (InputLength>0){
       stop();
       delay(1000);
     }else if((IrL == true && IrR == false && IrF == false)){
-      delay(500);
-      spin(-90);
-      delay(500);
+      forward(qrtr_rot*6.8*1.9,robot_spd);//adjust the constant to make the robot move one block);
+      stop();
+      delay(1000);
       forward(qrtr_rot*6.8*1.9,robot_spd);//adjust the constant to make the robot move one block);
     }else if((IrL == false && IrR == true && IrF == false)){
-      delay(500);
-      spin(88);
-      delay(500);
+      forward(qrtr_rot*6.8*1.9,robot_spd);//adjust the constant to make the robot move one block);
+      stop();
+      delay(1000);
       forward(qrtr_rot*6.8*1.9,robot_spd);//adjust the constant to make the robot move one block);
     }else if((IrL == false && IrR == true && IrF == true)||(IrL == true && IrR == false && IrF == true)||(IrL == true && IrR == true && IrF == true)){
       stop();
@@ -521,7 +521,6 @@ if (InputLength>0){
 }
 //
 //      spin(94);
-//      delay(1000);
 
   Serial.println(Input);
 }
@@ -933,16 +932,11 @@ void updateIR() {
   }
   
   //  print IR data
-//      Serial.println("frontIR\tbackIR\tleftIR\trightIR");
-//      Serial.print(inirF); Serial.print("\t");
-//      Serial.print(inirB); Serial.print("\t");
-//      Serial.print(inirL); Serial.print("\t");
-//      Serial.println(inirR);
       Serial.println("frontIR\tbackIR\tleftIR\trightIR");
-      Serial.print(IrF); Serial.print("\t");
-      Serial.print(IrB); Serial.print("\t");
-      Serial.print(IrL); Serial.print("\t");
-      Serial.println(IrR);
+      Serial.print(inirF); Serial.print("\t");
+      Serial.print(inirB); Serial.print("\t");
+      Serial.print(inirL); Serial.print("\t");
+      Serial.println(inirR);
 
 // test the distance to check whether in wall, hallway, obstacle condition
   if (inirF <= irMax){
