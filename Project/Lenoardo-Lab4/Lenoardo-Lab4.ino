@@ -209,7 +209,7 @@ movingAvg photocellReadingL(10);     // the analog reading from the sensor divid
 movingAvg photocellReadingR(10);     // the analog reading from the sensor divider
 
 // follow the Topological Path
-String Input = "";
+String Input = "test";
 int InputLength;
 String Char;
 
