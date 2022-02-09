@@ -15,7 +15,13 @@ classdef MobileGUI < matlab.mixin.SetGet
             obj.LEOserial = serialport(portStr, baudrate);
         end
         
-        function response = topoRun(obj, command)
+         function response = topoRun(obj, command)
+            disp(command)
+            writeline(obj.LEOserial,command);
+            response = readline(obj.LEOserial)
+        end
+        
+        function response = topoRun1(obj, command)
             if command == 'S'
                 fprintf("\nStarting\n");
                 writeline(obj.LEOserial,'Starting')
