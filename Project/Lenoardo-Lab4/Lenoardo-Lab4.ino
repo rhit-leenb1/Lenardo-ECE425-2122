@@ -122,7 +122,7 @@ volatile boolean test_state; //variable to hold test led state for timer interru
 #define outsidecorner  7 //outside corner
 #define wander    0 //random wonder
 
-#define timer_int 250000 // 1/2 second (500000 us) period for timer interrupt
+#define timer_int 500000 // 1/2 second (500000 us) period for timer interrupt
 
 boolean obstacle = false; //obstacle detected
 boolean SonarL = false;   //left sonar detected
@@ -209,7 +209,7 @@ movingAvg photocellReadingL(10);     // the analog reading from the sensor divid
 movingAvg photocellReadingR(10);     // the analog reading from the sensor divider
 
 // follow the Topological Path
-String Input = "test";
+String Input = "";
 int InputLength;
 String Char;
 
@@ -468,7 +468,7 @@ if (InputLength>0){
       spin(-90);
       delay(500);
       forward(qrtr_rot*6.8*1.9,robot_spd);//adjust the constant to make the robot move one block);
-    }else if((IrL == false && IrR == true && IrF == false)||(IrL == false && IrR == true && IrF == true)||(IrL == false && IrR == false && IrF == false)){
+    }else if((IrL == false && IrR == true && IrF == false)||(IrL == false && IrR == true && IrF == true)||(IrL == false && IrR == false && IrF == false)||(IrL == false && IrR == false && IrF == true)){
       delay(500);
       spin(88);
       delay(500);
@@ -481,7 +481,7 @@ if (InputLength>0){
       forward(qrtr_rot*6.8*1.9,robot_spd);//adjust the constant to make the robot move one block);
       stop();
       delay(1000);
-    }else if((IrL == true && IrR == false && IrF == false)||(IrL == true && IrR == false && IrF == true)||(IrL == false && IrR == false && IrF == false)){
+    }else if((IrL == true && IrR == false && IrF == false)||(IrL == true && IrR == false && IrF == true)||(IrL == false && IrR == false && IrF == false)||(IrL == false && IrR == false && IrF == true)){
       delay(500);
       spin(-90);
       delay(500);
@@ -496,24 +496,29 @@ if (InputLength>0){
 
     }
   }else if(Input.charAt(0)=='T'){
-    if((IrL == true && IrR == true && IrF == false)||(IrL == false && IrR == false && IrF == false)){
-      forward(qrtr_rot*6.8*1.9,robot_spd);//adjust the constant to make the robot move one block);
+//    if((IrL == true && IrR == true && IrF == false)||(IrL == false && IrR == false && IrF == false)){
+//      forward(qrtr_rot*6.8*1.9,robot_spd);//adjust the constant to make the robot move one block);
+//      stop();
+//      delay(1000);
+//    }else if((IrL == true && IrR == false && IrF == false)){
+//      delay(500);
+//      spin(-90);
+//      delay(500);
+//      forward(qrtr_rot*6.8*1.9,robot_spd);//adjust the constant to make the robot move one block);
+//    }else if((IrL == false && IrR == true && IrF == false)){
+//      delay(500);
+//      spin(88);
+//      delay(500);
+//      forward(qrtr_rot*6.8*1.9,robot_spd);//adjust the constant to make the robot move one block);
+//    }else if((IrL == false && IrR == true && IrF == true)||(IrL == true && IrR == false && IrF == true)||(IrL == true && IrR == true && IrF == true)){
+      if(IrF==false){
+        forward(qrtr_rot*6.8*1.9,robot_spd);//adjust the constant to make the robot move one block);
       stop();
       delay(1000);
-    }else if((IrL == true && IrR == false && IrF == false)){
-      delay(500);
-      spin(-90);
-      delay(500);
-      forward(qrtr_rot*6.8*1.9,robot_spd);//adjust the constant to make the robot move one block);
-    }else if((IrL == false && IrR == true && IrF == false)){
-      delay(500);
-      spin(88);
-      delay(500);
-      forward(qrtr_rot*6.8*1.9,robot_spd);//adjust the constant to make the robot move one block);
-    }else if((IrL == false && IrR == true && IrF == true)||(IrL == true && IrR == false && IrF == true)||(IrL == true && IrR == true && IrF == true)){
-      stop();
-      Input.remove(0,1);
-      InputLength = Input.length();
+      }else if (IrF==true){
+        stop();
+        Input.remove(0,1);
+        InputLength = Input.length();
     }
   }
 }else{
