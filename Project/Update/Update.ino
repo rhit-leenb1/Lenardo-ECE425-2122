@@ -72,7 +72,7 @@ NewPing sonarRt(snrRight, snrRight);  //create an instance of the right sonar
 #define snrMax   15               // sonar maximum threshold for wall (use a deadband of 4 to 6 inches)
 
 
-#define irThresh    13 // The IR threshold for presence of an obstacle in ADC value
+#define irThresh    8 // The IR threshold for presence of an obstacle in ADC value
 #define irMax    7      // IR max threshold
 #define irMin    5      // IR min threshold
 #define snrThresh   60  // The sonar threshold for presence of an obstacle in cm
@@ -122,7 +122,7 @@ volatile boolean test_state; //variable to hold test led state for timer interru
 #define outsidecorner  7 //outside corner
 #define wander    0 //random wonder
 
-#define timer_int 500000 // 1/2 second (500000 us) period for timer interrupt
+#define timer_int 250000 // 1/2 second (500000 us) period for timer interrupt
 
 boolean obstacle = false; //obstacle detected
 boolean SonarL = false;   //left sonar detected
@@ -496,37 +496,35 @@ if (InputLength>0){
 
     }
   }else if(Input.charAt(0)=='T'){
-//    if((IrL == true && IrR == true && IrF == false)||(IrL == false && IrR == false && IrF == false)){
-//      forward(qrtr_rot*6.8*1.9,robot_spd);//adjust the constant to make the robot move one block);
-//      stop();
-//      delay(1000);
-//    }else if((IrL == true && IrR == false && IrF == false)){
-//      delay(500);
-//      spin(-90);
-//      delay(500);
-//      forward(qrtr_rot*6.8*1.9,robot_spd);//adjust the constant to make the robot move one block);
-//    }else if((IrL == false && IrR == true && IrF == false)){
-//      delay(500);
-//      spin(88);
-//      delay(500);
-//      forward(qrtr_rot*6.8*1.9,robot_spd);//adjust the constant to make the robot move one block);
-//    }else if((IrL == false && IrR == true && IrF == true)||(IrL == true && IrR == false && IrF == true)||(IrL == true && IrR == true && IrF == true)){
-      if(IrF==false){
-        forward(qrtr_rot*6.8*1.9,robot_spd);//adjust the constant to make the robot move one block);
+    if((IrL == true && IrR == true && IrF == false)||(IrL == false && IrR == false && IrF == false)){
+      forward(qrtr_rot*6.8*1.9,robot_spd);//adjust the constant to make the robot move one block);
       stop();
       delay(1000);
-      }else if (IrF==true){
-        stop();
-        Input.remove(0,1);
-        InputLength = Input.length();
+    }else if((IrL == true && IrR == false && IrF == false)){
+      forward(qrtr_rot*6.8*1.9,robot_spd);//adjust the constant to make the robot move one block);
+      stop();
+      delay(1000);
+      forward(qrtr_rot*6.8*1.9,robot_spd);//adjust the constant to make the robot move one block);
+    }else if((IrL == false && IrR == true && IrF == false)){
+      forward(qrtr_rot*6.8*1.9,robot_spd);//adjust the constant to make the robot move one block);
+      stop();
+      delay(1000);
+      forward(qrtr_rot*6.8*1.9,robot_spd);//adjust the constant to make the robot move one block);
+    }else if((IrL == false && IrR == true && IrF == true)||(IrL == true && IrR == false && IrF == true)||(IrL == true && IrR == true && IrF == true)||(IrL == false && IrR == false && IrF == true)){
+      stop();
+      Input.remove(0,1);
+      InputLength = Input.length();
     }
   }
 }else{
   stop();
 }
+
+
+
 //
 //      spin(94);
-//      delay(1000);
+
 
   Serial.println(Input);
 }
@@ -630,10 +628,13 @@ void forward(int rot, int spd) {
 //  positions[0] = stepperRight.currentPosition() + rot*1; //right motor absolute position
 //  positions[1] = stepperLeft.currentPosition() + rot*1; //left motor absolute position
 //  steppers.moveTo(positions);
+
+
   stepperRight.move(-rot*0.99);//move one full rotation forward relative to current position
   stepperLeft.move(-rot*0.98);//move one full rotation forward relative to current position
   stepperRight.setMaxSpeed(spd);//set right motor speed
   stepperLeft.setMaxSpeed(spd*0.98);//set left motor speed
+
   runAtSpeedToPosition(); //run both stepper to set position
   runToStop();//run until the robot reaches the target
 
@@ -938,16 +939,11 @@ void updateIR() {
   }
   
   //  print IR data
-//      Serial.println("frontIR\tbackIR\tleftIR\trightIR");
-//      Serial.print(inirF); Serial.print("\t");
-//      Serial.print(inirB); Serial.print("\t");
-//      Serial.print(inirL); Serial.print("\t");
-//      Serial.println(inirR);
       Serial.println("frontIR\tbackIR\tleftIR\trightIR");
-      Serial.print(IrF); Serial.print("\t");
-      Serial.print(IrB); Serial.print("\t");
-      Serial.print(IrL); Serial.print("\t");
-      Serial.println(IrR);
+      Serial.print(inirF); Serial.print("\t");
+      Serial.print(inirB); Serial.print("\t");
+      Serial.print(inirL); Serial.print("\t");
+      Serial.println(inirR);
 
 // test the distance to check whether in wall, hallway, obstacle condition
   if (inirF <= irMax){
