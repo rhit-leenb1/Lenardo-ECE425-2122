@@ -510,7 +510,7 @@ if (InputLength>0){
       stop();
       delay(1000);
       forward(qrtr_rot*6.8*1.9,robot_spd);//adjust the constant to make the robot move one block);
-    }else if((IrL == false && IrR == true && IrF == true)||(IrL == true && IrR == false && IrF == true)||(IrL == true && IrR == true && IrF == true)){
+    }else if((IrL == false && IrR == true && IrF == true)||(IrL == true && IrR == false && IrF == true)||(IrL == true && IrR == true && IrF == true)||(IrL == false && IrR == false && IrF == true)){
       stop();
       Input.remove(0,1);
       InputLength = Input.length();
@@ -519,8 +519,12 @@ if (InputLength>0){
 }else{
   stop();
 }
+
+
+
 //
 //      spin(94);
+
 
   Serial.println(Input);
 }
@@ -624,10 +628,13 @@ void forward(int rot, int spd) {
 //  positions[0] = stepperRight.currentPosition() + rot*1; //right motor absolute position
 //  positions[1] = stepperLeft.currentPosition() + rot*1; //left motor absolute position
 //  steppers.moveTo(positions);
+
+
   stepperRight.move(-rot*0.99);//move one full rotation forward relative to current position
   stepperLeft.move(-rot*0.98);//move one full rotation forward relative to current position
   stepperRight.setMaxSpeed(spd);//set right motor speed
   stepperLeft.setMaxSpeed(spd*0.98);//set left motor speed
+
   runAtSpeedToPosition(); //run both stepper to set position
   runToStop();//run until the robot reaches the target
 
