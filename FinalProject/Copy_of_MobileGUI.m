@@ -9,13 +9,13 @@ classdef Copy_of_MobileGUI < matlab.mixin.SetGet
     end
     
     methods
-        function obj = MobileGUI()%portNumber,baudrate)
-            %fprintf('Connecting to robot...');
-            %portStr = sprintf('COM%d',portNumber);
-            %obj.LEOserial = serialport(portStr, baudrate);
+        function obj = Copy_of_MobileGUI(portNumber,baudrate)
+            fprintf('Connecting to robot...');
+            portStr = sprintf('COM%d',portNumber);
+            obj.LEOserial = serialport(portStr, baudrate);
         end
         
-         function response = topoRun(obj, command)
+         function response = stringRun(obj, command)
             disp(command)
             writeline(obj.LEOserial,command);
             response = readline(obj.LEOserial)
@@ -57,19 +57,23 @@ classdef Copy_of_MobileGUI < matlab.mixin.SetGet
                 elseif mod(robotPoint(3),4) == 3
                     robotPoint(1) = robotPoint(1) - 1;
                 end
+                writeline(obj.LEOserial,'F')
                     
             elseif command == 'R'
                 fprintf("Turning Right\n");
                 robotPoint(3) = robotPoint(3) + 1;
+                writeline(obj.LEOserial,'R')
             elseif command == 'L'
                 fprintf("Turning Left\n");
                 robotPoint(3) = robotPoint(3) - 1;
+                writeline(obj.LEOserial,'L')
             elseif command == 'U'
                 fprintf("Turning Around\n");
                 robotPoint(3) = robotPoint(3) + 2;
+                writeline(obj.LEOserial,'U')
             elseif command == 'T'
                 fprintf("Terminate\n");
-                %writeline(obj.LEOserial,'Terminate')
+                writeline(obj.LEOserial,'T')
             end
             response = robotPoint;
             %response = [1 4];
