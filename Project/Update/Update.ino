@@ -457,67 +457,98 @@ if (Serial.available()){
       Input.remove(0,1); 
   }
 
+//if (InputLength>0){
+//  if (Input.charAt(0)=='L'){
+//    if((IrL == true && IrR == true && IrF == false)||(IrL == true && IrR == false && IrF == false)){
+//      forward(qrtr_rot*6.8*1.9,robot_spd);//adjust the constant to make the robot move one block);
+//      stop();
+//      delay(1000);
+//    }else if((IrL == true && IrR == false && IrF == true)){
+//      delay(500);
+//      spin(-90);
+//      delay(500);
+//      forward(qrtr_rot*6.8*1.9,robot_spd);//adjust the constant to make the robot move one block);
+//    }else if((IrL == false && IrR == true && IrF == false)||(IrL == false && IrR == true && IrF == true)||(IrL == false && IrR == false && IrF == false)||(IrL == false && IrR == false && IrF == true)){
+//      delay(500);
+//      spin(88);
+//      delay(500);
+//      forward(qrtr_rot*6.8*1.9,robot_spd);//adjust the constant to make the robot move one block);
+//      Input.remove(0,1);
+//      InputLength = Input.length();
+//    }
+//  }else if(Input.charAt(0)=='R'){
+//    if((IrL == true && IrR == true && IrF == false)||(IrL == false && IrR == true && IrF == false)){
+//      forward(qrtr_rot*6.8*1.9,robot_spd);//adjust the constant to make the robot move one block);
+//      stop();
+//      delay(1000);
+//    }else if((IrL == true && IrR == false && IrF == false)||(IrL == true && IrR == false && IrF == true)||(IrL == false && IrR == false && IrF == false)||(IrL == false && IrR == false && IrF == true)){
+//      delay(500);
+//      spin(-90);
+//      delay(500);
+//      forward(qrtr_rot*6.8*1.9,robot_spd);//adjust the constant to make the robot move one block);
+//      Input.remove(0,1);
+//      InputLength = Input.length();
+//    }else if((IrL == false && IrR == true && IrF == true)){
+//      delay(500);
+//      spin(88);
+//      delay(500);
+//      forward(qrtr_rot*6.8*1.9,robot_spd);//adjust the constant to make the robot move one block);
+//
+//    }
+//  }else if(Input.charAt(0)=='T'){
+//    if((IrL == true && IrR == true && IrF == false)||(IrL == false && IrR == false && IrF == false)){
+//      forward(qrtr_rot*6.8*1.9,robot_spd);//adjust the constant to make the robot move one block);
+//      stop();
+//      delay(1000);
+//    }else if((IrL == true && IrR == false && IrF == false)){
+//      forward(qrtr_rot*6.8*1.9,robot_spd);//adjust the constant to make the robot move one block);
+//      stop();
+//      delay(1000);
+//      forward(qrtr_rot*6.8*1.9,robot_spd);//adjust the constant to make the robot move one block);
+//    }else if((IrL == false && IrR == true && IrF == false)){
+//      forward(qrtr_rot*6.8*1.9,robot_spd);//adjust the constant to make the robot move one block);
+//      stop();
+//      delay(1000);
+//      forward(qrtr_rot*6.8*1.9,robot_spd);//adjust the constant to make the robot move one block);
+//    }else if((IrL == false && IrR == true && IrF == true)||(IrL == true && IrR == false && IrF == true)||(IrL == true && IrR == true && IrF == true)||(IrL == false && IrR == false && IrF == true)){
+//      stop();
+//      Input.remove(0,1);
+//      InputLength = Input.length();
+//    }
+//  }
+//}else{
+//  stop();
+//}
+
+
 if (InputLength>0){
   if (Input.charAt(0)=='L'){
-    if((IrL == true && IrR == true && IrF == false)||(IrL == true && IrR == false && IrF == false)){
-      forward(qrtr_rot*6.8*1.9,robot_spd);//adjust the constant to make the robot move one block);
-      stop();
-      delay(1000);
-    }else if((IrL == true && IrR == false && IrF == true)){
-      delay(500);
-      spin(-90);
-      delay(500);
-      forward(qrtr_rot*6.8*1.9,robot_spd);//adjust the constant to make the robot move one block);
-    }else if((IrL == false && IrR == true && IrF == false)||(IrL == false && IrR == true && IrF == true)||(IrL == false && IrR == false && IrF == false)||(IrL == false && IrR == false && IrF == true)){
-      delay(500);
+    delay(1000);
       spin(88);
-      delay(500);
-      forward(qrtr_rot*6.8*1.9,robot_spd);//adjust the constant to make the robot move one block);
       Input.remove(0,1);
       InputLength = Input.length();
-    }
   }else if(Input.charAt(0)=='R'){
-    if((IrL == true && IrR == true && IrF == false)||(IrL == false && IrR == true && IrF == false)){
-      forward(qrtr_rot*6.8*1.9,robot_spd);//adjust the constant to make the robot move one block);
-      stop();
       delay(1000);
-    }else if((IrL == true && IrR == false && IrF == false)||(IrL == true && IrR == false && IrF == true)||(IrL == false && IrR == false && IrF == false)||(IrL == false && IrR == false && IrF == true)){
-      delay(500);
       spin(-90);
-      delay(500);
-      forward(qrtr_rot*6.8*1.9,robot_spd);//adjust the constant to make the robot move one block);
       Input.remove(0,1);
       InputLength = Input.length();
-    }else if((IrL == false && IrR == true && IrF == true)){
-      delay(500);
-      spin(88);
-      delay(500);
-      forward(qrtr_rot*6.8*1.9,robot_spd);//adjust the constant to make the robot move one block);
-
-    }
+  }else if(Input.charAt(0)=='F'){
+    forward(qrtr_rot*6.8*1.9,robot_spd);//adjust the constant to make the robot move one block);
+    stop();
+    delay(1000);
+    Input.remove(0,1);
+    InputLength = Input.length();
+  }else if(Input.charAt(0)=='U'){
+    spin(-180);
+    stop();
+    delay(1000);
+    Input.remove(0,1);
+    InputLength = Input.length();
   }else if(Input.charAt(0)=='T'){
-    if((IrL == true && IrR == true && IrF == false)||(IrL == false && IrR == false && IrF == false)){
-      forward(qrtr_rot*6.8*1.9,robot_spd);//adjust the constant to make the robot move one block);
-      stop();
-      delay(1000);
-    }else if((IrL == true && IrR == false && IrF == false)){
-      forward(qrtr_rot*6.8*1.9,robot_spd);//adjust the constant to make the robot move one block);
-      stop();
-      delay(1000);
-      forward(qrtr_rot*6.8*1.9,robot_spd);//adjust the constant to make the robot move one block);
-    }else if((IrL == false && IrR == true && IrF == false)){
-      forward(qrtr_rot*6.8*1.9,robot_spd);//adjust the constant to make the robot move one block);
-      stop();
-      delay(1000);
-      forward(qrtr_rot*6.8*1.9,robot_spd);//adjust the constant to make the robot move one block);
-    }else if((IrL == false && IrR == true && IrF == true)||(IrL == true && IrR == false && IrF == true)||(IrL == true && IrR == true && IrF == true)||(IrL == false && IrR == false && IrF == true)){
       stop();
       Input.remove(0,1);
       InputLength = Input.length();
-    }
   }
-}else{
-  stop();
 }
 
 
