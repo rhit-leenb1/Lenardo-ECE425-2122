@@ -212,6 +212,7 @@ movingAvg photocellReadingR(10);     // the analog reading from the sensor divid
 String Input = "";
 int InputLength;
 String Char;
+int Output;
 
 void setup() {
   // put your setup code here, to run once:
@@ -454,7 +455,7 @@ if (Serial.available()){
       Serial.println(Input);
       Input = Serial.readString();
       InputLength = Input.length();
-      Input.remove(0,1); 
+      //Input.remove(0,1); 
   }
 
 //if (InputLength>0){
@@ -523,13 +524,16 @@ if (Serial.available()){
 
 if (InputLength>0){
   if (Input.charAt(0)=='L'){
-    delay(1000);
+
       spin(88);
+      stop();
+      delay(1000);
       Input.remove(0,1);
       InputLength = Input.length();
   }else if(Input.charAt(0)=='R'){
-      delay(1000);
       spin(-90);
+      stop();
+      delay(1000);
       Input.remove(0,1);
       InputLength = Input.length();
   }else if(Input.charAt(0)=='F'){
@@ -544,7 +548,11 @@ if (InputLength>0){
     delay(1000);
     Input.remove(0,1);
     InputLength = Input.length();
-  }else if(Input.charAt(0)=='T'){
+  }else if((Input.charAt(0)=='T')||(Input.charAt(0)=='S')){
+      stop();
+      Input.remove(0,1);
+      InputLength = Input.length();
+  }else if(Input.charAt(0)=='C'){
       stop();
       Input.remove(0,1);
       InputLength = Input.length();
