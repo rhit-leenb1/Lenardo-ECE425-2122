@@ -965,11 +965,11 @@ void updateIR() {
   }
   
   //  print IR data
-      Serial.println("frontIR\tbackIR\tleftIR\trightIR");
-      Serial.print(inirF); Serial.print("\t");
-      Serial.print(inirB); Serial.print("\t");
-      Serial.print(inirL); Serial.print("\t");
-      Serial.println(inirR);
+//      Serial.println("frontIR\tbackIR\tleftIR\trightIR");
+//      Serial.print(inirF); Serial.print("\t");
+//      Serial.print(inirB); Serial.print("\t");
+//      Serial.print(inirL); Serial.print("\t");
+//      Serial.println(inirR);
 
 // test the distance to check whether in wall, hallway, obstacle condition
   if (inirF <= irMax){
@@ -999,13 +999,13 @@ void updateIR() {
     IrR = false;
   }
 
-       Serial.println("frontIR\tbackIR\tleftIR\trightIR");
-      Serial.print(IrF); Serial.print("\t");
-      Serial.print(IrB); Serial.print("\t");
-      Serial.print(IrL); Serial.print("\t");
-      Serial.println(IrR);
-
-  //calcuate error
+//       Serial.println("frontIR\tbackIR\tleftIR\trightIR");
+//      Serial.print(IrF); Serial.print("\t");
+//      Serial.print(IrB); Serial.print("\t");
+//      Serial.print(IrL); Serial.print("\t");
+//      Serial.println(IrR);
+//
+//  //calcuate error
 
     ri_curr = inirR;             //log current sensor reading [right IR]
   if ((ri_curr > irMax) | (ri_curr < irMin)){
