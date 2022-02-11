@@ -1,4 +1,4 @@
-classdef Copy_of_MobileGUI < matlab.mixin.SetGet
+classdef Metric_MobileGUI < matlab.mixin.SetGet
     %PLATELOADER Controls the Beckman Coulter Plate Loader Robot
     %   Performs the basic actions to control the plate loader
     
@@ -9,7 +9,7 @@ classdef Copy_of_MobileGUI < matlab.mixin.SetGet
     end
     
     methods
-        function obj = Copy_of_MobileGUI(portNumber,baudrate)
+        function obj = Metric_MobileGUI(portNumber,baudrate)
             fprintf('Connecting to robot...');
             portStr = sprintf('COM%d',portNumber);
             obj.LEOserial = serialport(portStr, baudrate);
@@ -21,33 +21,13 @@ classdef Copy_of_MobileGUI < matlab.mixin.SetGet
             response = readline(obj.LEOserial)
         end
         
-        function response = topoRun1(obj, command)
-            if command == 'S'
-                fprintf("\nStarting\n");
-                writeline(obj.LEOserial,'Starting')
-            elseif command == 'R'
-                fprintf("Turning Right\n");
-                 writeline(obj.LEOserial,'S -95')
-            elseif command == 'L'
-                fprintf("Turning Left\n");
-                writeline(obj.LEOserial,'S 95')
-            elseif command == 'U'
-                fprintf("Turning Around\n");
-                writeline(obj.LEOserial,'S 180')
-            elseif command == 'T'
-                fprintf("Terminate\n");
-                writeline(obj.LEOserial,'Terminate')
-            end
-            
-            response = readline(obj.LEOserial)
-            response = [1 4];
-        end
         
-        function response = topoRunDUMMY(obj, command, robotPoint)
+        function response = charRunUpdate(obj, command, robotPoint)
             if command == 'S'
                 fprintf("\nStarting\n");
+                writeline(obj.LEOserial,'S')
             elseif command == 'F'
-                fprintf("Forward\n");
+                %fprintf("Forward\n");
                 if mod(robotPoint(3),4) == 0
                     robotPoint(2) = robotPoint(2) - 1;
                 elseif mod(robotPoint(3),4) == 1
@@ -60,23 +40,23 @@ classdef Copy_of_MobileGUI < matlab.mixin.SetGet
                 writeline(obj.LEOserial,'F')
                     
             elseif command == 'R'
-                fprintf("Turning Right\n");
+                %fprintf("Turning Right\n");
                 robotPoint(3) = robotPoint(3) + 1;
                 writeline(obj.LEOserial,'R')
             elseif command == 'L'
-                fprintf("Turning Left\n");
+                %fprintf("Turning Left\n");
                 robotPoint(3) = robotPoint(3) - 1;
                 writeline(obj.LEOserial,'L')
             elseif command == 'U'
-                fprintf("Turning Around\n");
+                %fprintf("Turning Around\n");
                 robotPoint(3) = robotPoint(3) + 2;
                 writeline(obj.LEOserial,'U')
             elseif command == 'T'
-                fprintf("Terminate\n");
+                %fprintf("Terminate\n");
                 writeline(obj.LEOserial,'T')
             end
+            readline(obj.LEOserial)
             response = robotPoint;
-            %response = [1 4];
         end
         
         function pathPlanned = pathPlan(obj, mapText, start, goal)
