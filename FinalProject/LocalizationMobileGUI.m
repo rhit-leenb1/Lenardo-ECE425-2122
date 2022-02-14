@@ -1,4 +1,4 @@
-classdef Metric_MobileGUI < matlab.mixin.SetGet
+classdef LocalizationMobileGUI < matlab.mixin.SetGet
     %PLATELOADER Controls the Beckman Coulter Plate Loader Robot
     %   Performs the basic actions to control the plate loader
     
@@ -9,190 +9,17 @@ classdef Metric_MobileGUI < matlab.mixin.SetGet
     end
     
     methods
-        function obj = Metric_MobileGUI(name)
+        function obj = LocalizationMobileGUI(name)
             fprintf('%s initallized', name);
+            
         end
         
-        function setSerial(obj, portNumber,baudrate)
+        function setSerial(obj, portNumber,baudrate);
             portStr = sprintf('COM%d',portNumber);
             obj.LEOserial = serialport(portStr, baudrate);
         end
         
-        function [startPoint, isFound, blockList, visitedMap] = localize(obj, map, oldStart, blockList, visitedMap)
-            obj.Map = map;
-            isFound = 0;
-            writeline(obj.LEOserial,'C');
-            blockNum = str2num(readline(obj.LEOserial));
-            [Row, column] = find(obj.Map==blockNum);
-            if ~isempty(blockList())
-                iterNum = length(blockList(:,1));
-            else
-                iterNum = 0;
-            end
-            
-            if iterNum >= norm(length(map))
-                isFound = -1;
-                return
-            end
-            
-            % if only possible place
-            if length(Row) == 1
-                isFound = 1;
-                startPoint = [Row column oldStart(3)];
-                return
-            end
-            
-            keepRow = zeros(length(Row),1);
-            keepcolumn = zeros(length(column),1);
-            % follow previous path to see what blocks work
-            for block = 1:length(Row)
-                x = column(block);
-                y = Row(block);
-                followPath = 1;
-                
-                if visitedMap(y,x) == 0
-                    visitedMap(y,x) = 1;
 
-                    % retracing old steps
-                    for ind = 1:iterNum
-                        if mod(blockList(ind,2),4) == 0
-                            if map(y+1,x) == blockList(ind,1)
-                                y = y+1;
-                            else
-                                followPath = 0;
-                                break
-                            end
-                        elseif mod(blockList(ind,2),4) == 1
-                            if map(y,x-1) == blockList(ind,1)
-                                x = x - 1;
-                            else
-                                followPath = 0;
-                                break
-                            end
-                        elseif mod(blockList(ind,2),4) == 2
-                            if map(y-1,x) == blockList(ind,1)
-                                y = y - 1;
-                            else
-                                followPath = 0;
-                                break
-                            end
-                        elseif mod(blockList(ind,2),4) == 3
-                            if map(y,x+1) == blockList(ind,1)
-                                x = x + 1;
-                            else
-                                followPath = 0;
-                                break
-                            end
-                        end
-                    end
-                    % filter through previous steps and keeping paths that
-                    % followed correctly
-                    if followPath == 1 && iterNum > 0
-                        keepRow(block) = Row(block);
-                        keepcolumn(block) = column(block);
-                    end
-                end
-            end
-            if norm(keepRow) > 0
-                keepRow(keepRow==0) = [];
-                keepcolumn(keepcolumn==0) = [];
-                Row = keepRow;
-                column = keepcolumn;
-            end
-            
-            % if only one path that followed for local
-            if length(Row) == 1
-                isFound = 1;
-                startPoint = [Row column oldStart(3)];
-                return
-            end
-            
-            startPoint = [Row column];
-            startPoint(:,3) = obj.moveNext(blockNum,oldStart(3));
-            
-            if iterNum < 1
-                blockList = [blockNum startPoint(1,3)];
-            else
-                blockList = [blockNum startPoint(1,3); blockList(:,1) blockList(:,2)];
-            end
-            
-        end
-        
-        function newDirection = moveNext(obj, blockNum, facingDirection)
-            newDirection = 2;
-            % South Direction is open, move direction next for more map info
-            if ~(bitand(blockNum,0b0100))
-                if mod(facingDirection,4) == 0
-                    writeline(obj.LEOserial,'U');
-                    readline(obj.LEOserial);
-                elseif mod(facingDirection,4) == 1
-                    writeline(obj.LEOserial,'R');
-                    readline(obj.LEOserial);                
-                elseif mod(facingDirection,4) == 2  
-                elseif mod(facingDirection,4) == 3
-                    writeline(obj.LEOserial,'L');
-                    readline(obj.LEOserial);  
-                end
-            end
-            
-            % North Direction is open, move direction next for more map info
-            if ~(bitand(blockNum,0b0001))
-                newDirection = 0;
-                if mod(facingDirection,4) == 0
-                elseif mod(facingDirection,4) == 1
-                    writeline(obj.LEOserial,'L');
-                    readline(obj.LEOserial);                
-                elseif mod(facingDirection,4) == 2 
-                    writeline(obj.LEOserial,'U');
-                    readline(obj.LEOserial);
-                elseif mod(facingDirection,4) == 3
-                    writeline(obj.LEOserial,'R');
-                    readline(obj.LEOserial);  
-                end
-            end
-            
-            % East Direction is open, move direction next for more map info
-            if ~(bitand(blockNum,0b0010))
-                newDirection = 1;
-                if mod(facingDirection,4) == 0
-                    writeline(obj.LEOserial,'R');
-                    readline(obj.LEOserial);  
-                elseif mod(facingDirection,4) == 1               
-                elseif mod(facingDirection,4) == 2 
-                    writeline(obj.LEOserial,'L');
-                    readline(obj.LEOserial);
-                elseif mod(facingDirection,4) == 3
-                    writeline(obj.LEOserial,'U');
-                    readline(obj.LEOserial);  
-                end
-            end
-
-            % West Direction is open, move direction next for more map info
-            if ~(bitand(blockNum,0b1000))
-                newDirection = 3;
-                if mod(facingDirection,4) == 0
-                    writeline(obj.LEOserial,'L');
-                    readline(obj.LEOserial);  
-                elseif mod(facingDirection,4) == 1  
-                    writeline(obj.LEOserial,'U');
-                    readline(obj.LEOserial);  
-                elseif mod(facingDirection,4) == 2 
-                    writeline(obj.LEOserial,'R');
-                    readline(obj.LEOserial);
-                elseif mod(facingDirection,4) == 3
-                end
-            end
-            
-            writeline(obj.LEOserial,'F');
-            readline(obj.LEOserial);
-        end
-        
-        function response = stringRun(obj, command)
-            disp(command)
-            writeline(obj.LEOserial,command);
-            response = readline(obj.LEOserial)
-        end
-        
         
         function response = charRunUpdate(obj, command, robotPoint)
             if command == 'S'
@@ -226,7 +53,70 @@ classdef Metric_MobileGUI < matlab.mixin.SetGet
             elseif command == 'T'
                 %fprintf("Terminate\n");
                 writeline(obj.LEOserial,'T')
+                
+            % Localization Commands    
+            elseif command == '0'
+                if mod(robotPoint(3),4) == 0
+                elseif mod(robotPoint(3),4) == 1
+                    writeline(obj.LEOserial,'L')
+                    readline(obj.LEOserial)
+                elseif mod(robotPoint(3),4) == 2
+                    writeline(obj.LEOserial,'U')
+                    readline(obj.LEOserial)
+                elseif mod(robotPoint(3),4) == 3
+                    writeline(obj.LEOserial,'R')
+                    readline(obj.LEOserial)
+                end
+                writeline(obj.LEOserial,'F')
+                robotPoint(2) = robotPoint(2) - 1; 
+                robotPoint(3) = 0;
+            elseif command == '1'
+                if mod(robotPoint(3),4) == 0
+                    writeline(obj.LEOserial,'R')
+                    readline(obj.LEOserial)
+                elseif mod(robotPoint(3),4) == 1
+                elseif mod(robotPoint(3),4) == 2
+                    writeline(obj.LEOserial,'L')
+                    readline(obj.LEOserial)
+                elseif mod(robotPoint(3),4) == 3
+                    writeline(obj.LEOserial,'U')
+                    readline(obj.LEOserial)
+                end
+                writeline(obj.LEOserial,'F')
+                robotPoint(1) = robotPoint(1) + 1; 
+                robotPoint(3) = 1;
+            elseif command == '2'
+                if mod(robotPoint(3),4) == 0
+                    writeline(obj.LEOserial,'U')
+                    readline(obj.LEOserial)
+                elseif mod(robotPoint(3),4) == 1
+                    writeline(obj.LEOserial,'R')
+                    readline(obj.LEOserial)
+                elseif mod(robotPoint(3),4) == 2
+                elseif mod(robotPoint(3),4) == 3
+                    writeline(obj.LEOserial,'L')
+                    readline(obj.LEOserial)
+                end
+                writeline(obj.LEOserial,'F')
+                robotPoint(2) = robotPoint(2) + 1; 
+                robotPoint(3) = 2;
+            elseif command == '3'
+                if mod(robotPoint(3),4) == 0
+                    writeline(obj.LEOserial,'L')
+                    readline(obj.LEOserial)
+                elseif mod(robotPoint(3),4) == 1
+                    writeline(obj.LEOserial,'U')
+                    readline(obj.LEOserial)
+                elseif mod(robotPoint(3),4) == 2
+                    writeline(obj.LEOserial,'R')
+                    readline(obj.LEOserial)
+                elseif mod(robotPoint(3),4) == 3
+                end
+                writeline(obj.LEOserial,'F')
+                robotPoint(1) = robotPoint(1) - 1; 
+                robotPoint(3) = 3;
             end
+            
             readline(obj.LEOserial)
             response = robotPoint;
         end
