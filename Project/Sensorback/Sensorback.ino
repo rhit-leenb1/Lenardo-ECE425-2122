@@ -453,7 +453,7 @@ void loop() {
     Input = Serial.readString();
     InputLength = Input.length();
     //Input.remove(0,1);
-  }
+  
 
     //if (InputLength>0){
     //  if (Input.charAt(0)=='L'){
@@ -520,6 +520,7 @@ void loop() {
 
 
     if (InputLength > 0) {
+              Output = 0;
       if (Input.charAt(0) == 'L') {
         spin(88);
         stop();
@@ -551,17 +552,31 @@ void loop() {
       } else if (Input.charAt(0) == 'C') {
         stop();
         delay(1000);
-        Serial.println("frontIR\tbackIR\tleftIR\trightIR");
-        Serial.print(IrF); Serial.print("\t");
-        Serial.print(IrB); Serial.print("\t");
-        Serial.print(IrL); Serial.print("\t");
-        Serial.println(IrR);
+//        Serial.println("frontIR\tbackIR\tleftIR\trightIR");
+//        Serial.print(IrF); Serial.print("\t");
+//        Serial.print(IrB); Serial.print("\t");
+//        Serial.print(IrL); Serial.print("\t");
+//        Serial.println(IrR);
         Input.remove(0, 1);
         InputLength = Input.length();
-      }
-          Serial.println(Input);
-    }
 
+        if(IrF==true){
+          Output = Output+1;
+        }
+        if(IrB==true){
+          Output = Output+4;
+        }
+        if(IrL==true){
+          Output = Output+8;
+        }
+        if(IrR==true){
+          Output = Output+2;
+        }
+        //Serial.println(Output);
+      }
+        Serial.println(Output);
+    }
+  }
    
 
 
