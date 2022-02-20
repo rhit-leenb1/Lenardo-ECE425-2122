@@ -1,16 +1,10 @@
-//Wall following function with light homing subfunction
+//Final project code
 // Description:
-// This program is used to make the robot have Follow-Wall behavior for Lab3. The PD control is used to control the robot speed and direction.
-// Basic logic of this program is to use one state machine to change the behavior of the robot according to the sensor readings
-// The robot will be able to maintain a distance between 4 and 6 inches from the wall (actual range is 5 to 7 inches to provide bigger turning space)
-// The program is a modular program with different levels. Modifications is required for upper level functions.
-// Light homing function is added into the upper level function
-// The light function will start working when photosensor detects the light source
-// The robot will point to the light source and go forward
-// When the IR sensor detects obstacles, the robot will stop and return to homing starting point
-// Normally the robot will be in wall following mode.
+// This program is used to make the robot react on the command comes from the computer and send the required information back.
+// The robot will waiting for the command from the matlab and react on it
+// Some information will be provided to matlab like sensor readings and recent status.
 // Authors: Nathan Lee   Shantao Cao
-// Date: 1/16/2022
+// Date: 1/20/2022
 
 
 #include <AccelStepper.h>//include the stepper motor library
@@ -72,7 +66,7 @@ NewPing sonarRt(snrRight, snrRight);  //create an instance of the right sonar
 #define snrMax   15               // sonar maximum threshold for wall (use a deadband of 4 to 6 inches)
 
 
-#define irThresh    8 // The IR threshold for presence of an obstacle in ADC value
+#define irThresh    9 // The IR threshold for presence of an obstacle in ADC value
 #define irMax    7      // IR max threshold
 #define irMin    5      // IR min threshold
 #define snrThresh   60  // The sonar threshold for presence of an obstacle in cm
@@ -209,10 +203,10 @@ movingAvg photocellReadingL(10);     // the analog reading from the sensor divid
 movingAvg photocellReadingR(10);     // the analog reading from the sensor divider
 
 // follow the Topological Path
-String Input = "";
-int InputLength;
-String Char;
-int Output;
+String Input = ""; //input from matlab
+int InputLength; //length of input
+String Char;     // charactor in the input
+int Output;     //output for computer to receive
 
 void setup() {
   // put your setup code here, to run once:
@@ -519,39 +513,39 @@ void loop() {
     //}
 
 
-    if (InputLength > 0) {
-              Output = 0;
-      if (Input.charAt(0) == 'L') {
-        spin(88);
-        stop();
-        delay(1000);
-        Input.remove(0, 1);
-        InputLength = Input.length();
-      } else if (Input.charAt(0) == 'R') {
+    if (InputLength > 0) {      // check whether the robot is complete the command.
+      if (Input.charAt(0) == 'L') {         // receive L command, turng left and remove that command
+
+        spin(88);                           // turn left
+        stop();                             // stop
+        delay(1000);                        // delay 1s
+        Input.remove(0, 1);                 // remove command 
+        InputLength = Input.length();       // update length
+      } else if (Input.charAt(0) == 'R') {  // receive L command, turng right and remove that command
         spin(-90);
         stop();
         delay(1000);
         Input.remove(0, 1);
         InputLength = Input.length();
-      } else if (Input.charAt(0) == 'F') {
+      } else if (Input.charAt(0) == 'F') {  // receive F command, move forward and remove that command
         forward(qrtr_rot * 6.8 * 1.9, robot_spd); //adjust the constant to make the robot move one block);
         stop();
         delay(1000);
         Input.remove(0, 1);
         InputLength = Input.length();
-      } else if (Input.charAt(0) == 'U') {
+      } else if (Input.charAt(0) == 'U') {    //receive U command, turn around and remove that command
         spin(-180);
         stop();
         delay(1000);
         Input.remove(0, 1);
         InputLength = Input.length();
-      } else if ((Input.charAt(0) == 'T') || (Input.charAt(0) == 'S')) {
+      } else if ((Input.charAt(0) == 'T') || (Input.charAt(0) == 'S')) {    //receive S and T command, just stop and remove that command
         stop();
         Input.remove(0, 1);
         InputLength = Input.length();
-      } else if (Input.charAt(0) == 'C') {
+      } else if (Input.charAt(0) == 'C') {       //receive C command, send ir sensor data and remove that command
         stop();
-        delay(1000);
+        delay(100);
 //        Serial.println("frontIR\tbackIR\tleftIR\trightIR");
 //        Serial.print(IrF); Serial.print("\t");
 //        Serial.print(IrB); Serial.print("\t");
@@ -574,7 +568,7 @@ void loop() {
         }
         //Serial.println(Output);
       }
-        Serial.println(Output);
+        Serial.println(String(Output));
     }
   }
    
