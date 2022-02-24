@@ -9,20 +9,36 @@ classdef Metric_MobileGUI < matlab.mixin.SetGet
     end
     
     methods
+        %{
+        Generic start up function to initialize object connection
+        %}
         function obj = Metric_MobileGUI(name)
             fprintf('%s initallized', name);
         end
         
-        function setSerial(obj, portNumber,baudrate)
-            portStr = sprintf('COM%d',portNumber);
-            obj.LEOserial = serialport(portStr, baudrate);
+        %{
+        Intialize com port connection via bluetooth
+        %}
+        function text = setSerial(obj, portNumber,baudrate)
+            portStr = sprintf('COM%d',portNumber); % setting com port in string
+            obj.LEOserial = serialport(portStr, baudrate); % connecting and storing serial port
+            text = readline(obj.LEOserial)
         end
         
-        function [startPoint, isFound, blockList] = localize(obj, map, oldStart, blockList)
+        %{
+        Localization method:
+            1. ping C to get block value
+            2. locate block on map
+            3. iterate through previous pathing from current block to
+            verify which options can be localized
+        %}
+        function [startPoint, isFound, blockList, visitedMap] = localize(obj, map, oldStart, blockList, visitedMap)
             obj.Map = map;
             isFound = 0;
             writeline(obj.LEOserial,'C');
-            blockNum = str2num(readline(obj.LEOserial));
+            returnedValue = readline(obj.LEOserial);
+            blockNum = str2num(returnedValue);
+            %blockNum = obj.tranformOri(blockNum, oldStart);
             [Row, column] = find(obj.Map==blockNum);
             if ~isempty(blockList())
                 iterNum = length(blockList(:,1));
@@ -30,15 +46,17 @@ classdef Metric_MobileGUI < matlab.mixin.SetGet
                 iterNum = 0;
             end
             
-            if iterNum >= norm(length(map))
+            % limited number iteration
+            if iterNum >= 16
+                startPoint = oldStart;
                 isFound = -1;
                 return
             end
             
-            % if only possible place
+            % if only on single possible block exception
             if length(Row) == 1
-                isFound = 1;
-                startPoint = [Row column oldStart(3)];
+                isFound = 1
+                startPoint = [column Row oldStart(1,3)];
                 return
             end
             
@@ -50,142 +68,191 @@ classdef Metric_MobileGUI < matlab.mixin.SetGet
                 y = Row(block);
                 followPath = 1;
                 
-                % retracing old steps
-                for ind = 1:iterNum
-                    if mod(blockList(ind,2),4) == 0
-                        if map(y,x) == blockNum
-                            y = y + 1;
-                        else
-                            followPath = 0;
-                            break
-                        end
-                    elseif mod(blockList(ind,2),4) == 1
-                        if map(y,x) == blockNum
-                            x = x - 1;
-                        else
-                            followPath = 0;
-                            break
-                        end
-                    elseif mod(blockList(ind,2),4) == 2
-                        if map(y,x) == blockNum
-                            y = y - 1;
-                        else
-                            followPath = 0;
-                            break
-                        end
-                    elseif mod(blockList(ind,2),4) == 3
-                        if map(y,x) == blockNum
-                            x = x + 1;
-                        else
-                            followPath = 0;
-                            break
+                % track visited places to prevent looping back
+                if visitedMap(y,x) == 0
+                    visitedMap(y,x) = 1;
+
+                    % retracing old steps and path to remove options
+                    for ind = 1:iterNum
+                        if mod(blockList(ind,2),4) == 0
+                            if map(y+1,x) == blockList(ind,1)
+                                y = y+1;
+                            else
+                                followPath = 0;
+                                break
+                            end
+                        elseif mod(blockList(ind,2),4) == 1
+                            if map(y,x-1) == blockList(ind,1)
+                                x = x - 1;
+                            else
+                                followPath = 0;
+                                break
+                            end
+                        elseif mod(blockList(ind,2),4) == 2
+                            if map(y-1,x) == blockList(ind,1)
+                                y = y - 1;
+                            else
+                                followPath = 0;
+                                break
+                            end
+                        elseif mod(blockList(ind,2),4) == 3
+                            if map(y,x+1) == blockList(ind,1)
+                                x = x + 1;
+                            else
+                                followPath = 0;
+                                break
+                            end
                         end
                     end
-                end
-                if followPath == 1 && iterNum > 0
-                    keepRow(block) = Row(block);
-                    keepcolumn(block) = column(block);
-                    break
+                    % filter through previous steps and keeping paths that
+                    % followed correctly
+                    if followPath == 1 && iterNum > 0
+                        keepRow(block) = Row(block);
+                        keepcolumn(block) = column(block);
+                    end
                 end
             end
-            keepRow(
-            Row = keepRow;
-            column = keepcolumn;
+            % removes all non possible blocks based upon previous pathing
+            if norm(keepRow) > 0
+                keepRow(keepRow==0) = [];
+                keepcolumn(keepcolumn==0) = [];
+                Row = keepRow;
+                column = keepcolumn;
+            end
             
             % if only one path that followed for local
             if length(Row) == 1
                 isFound = 1;
-                startPoint = [Row column oldStart(3)];
+                startPoint = [column Row oldStart(3)];
                 return
             end
             
-            startPoint = [Row column];
-            startPoint(:,3) = obj.moveNext(blockNum,oldStart(3));
+            % all posssible block locations on the map
+            startPoint = [column Row];
+            startPoint(:,3) = oldStart(3);
             
+            
+            % keep memory of previously visited blocks
             if iterNum < 1
-                blockList = [blockNum startPoint(3)];
+                blockList = [blockNum startPoint(1,3)];
             else
-                blockList = [blockNum startPoint(3); blockList(:,1) blockList(:,2)];
+                blockList = [blockNum startPoint(1,3); blockList(:,1) blockList(:,2)];
             end
-            
         end
         
+        %{
+            Move direction for automated localization. Moves to a non
+            blocked opening surrounding current robot position.
+        %}
         function newDirection = moveNext(obj, blockNum, facingDirection)
             newDirection = 2;
+            hasTurn = 0;
             % South Direction is open, move direction next for more map info
-            if ~(bitand(blockNum,0b0100))
+            if ~(bitand(blockNum,0b0100)) && hasTurn == 0 && mod(facingDirection,4)~=0
+                fprintf("South\n");
                 if mod(facingDirection,4) == 0
-                    writeline(obj.LEOserial,'U');
-                    readline(obj.LEOserial);
+                    obj.turn('U');
                 elseif mod(facingDirection,4) == 1
-                    writeline(obj.LEOserial,'R');
-                    readline(obj.LEOserial);                
-                elseif mod(facingDirection,4) == 2  
+                    obj.turn('R')          
+                elseif mod(facingDirection,4) == 2
+                    writeline(obj.LEOserial,'F');
+                    response = readline(obj.LEOserial);
                 elseif mod(facingDirection,4) == 3
-                    writeline(obj.LEOserial,'L');
-                    readline(obj.LEOserial);  
+                    obj.turn('L')
                 end
+                hasTurn = 1;
             end
             
             % North Direction is open, move direction next for more map info
-            if ~(bitand(blockNum,0b0001))
+            if ~(bitand(blockNum,0b0001)) && hasTurn == 0 && mod(facingDirection,4)~=2
+                fprintf("North\n");
                 newDirection = 0;
                 if mod(facingDirection,4) == 0
+                    writeline(obj.LEOserial,'F');
+                    response = readline(obj.LEOserial);
                 elseif mod(facingDirection,4) == 1
-                    writeline(obj.LEOserial,'L');
-                    readline(obj.LEOserial);                
+                    obj.turn('L');       
                 elseif mod(facingDirection,4) == 2 
-                    writeline(obj.LEOserial,'U');
-                    readline(obj.LEOserial);
+                    obj.turn('U');
                 elseif mod(facingDirection,4) == 3
-                    writeline(obj.LEOserial,'R');
-                    readline(obj.LEOserial);  
+                    obj.turn('R');
                 end
+                hasTurn = 1;
             end
             
             % East Direction is open, move direction next for more map info
-            if ~(bitand(blockNum,0b0010))
+            if ~(bitand(blockNum,0b0010)) && hasTurn == 0 && mod(facingDirection,4)~=3
+                fprintf("East\n");
                 newDirection = 1;
                 if mod(facingDirection,4) == 0
-                    writeline(obj.LEOserial,'R');
-                    readline(obj.LEOserial);  
-                elseif mod(facingDirection,4) == 1               
+                    obj.turn('R');
+                elseif mod(facingDirection,4) == 1 
+                    writeline(obj.LEOserial,'F');
+                    response = readline(obj.LEOserial);
                 elseif mod(facingDirection,4) == 2 
-                    writeline(obj.LEOserial,'L');
-                    readline(obj.LEOserial);
+                    obj.turn('L');
                 elseif mod(facingDirection,4) == 3
-                    writeline(obj.LEOserial,'U');
-                    readline(obj.LEOserial);  
+                    obj.turn('U');
                 end
+                hasTurn = 1;
             end
 
             % West Direction is open, move direction next for more map info
-            if ~(bitand(blockNum,0b1000))
+            if ~(bitand(blockNum,0b1000)) && hasTurn == 0 && mod(facingDirection,4)~=1
+                fprintf("West\n");
                 newDirection = 3;
                 if mod(facingDirection,4) == 0
-                    writeline(obj.LEOserial,'L');
-                    readline(obj.LEOserial);  
+                    obj.turn('L');
                 elseif mod(facingDirection,4) == 1  
-                    writeline(obj.LEOserial,'U');
-                    readline(obj.LEOserial);  
+                    obj.turn('U');
                 elseif mod(facingDirection,4) == 2 
-                    writeline(obj.LEOserial,'R');
-                    readline(obj.LEOserial);
+                    obj.turn('R');
                 elseif mod(facingDirection,4) == 3
+                    writeline(obj.LEOserial,'F');
+                    response = readline(obj.LEOserial);
                 end
+                hasTurn = 1;
             end
-            
+        end
+        
+        function turn(obj, direction)
+            writeline(obj.LEOserial,direction);
+            readline(obj.LEOserial); 
             writeline(obj.LEOserial,'F');
             readline(obj.LEOserial);
         end
         
+        
+        %{
+            sends string to LEO to run (topological path execution)
+        %}
         function response = stringRun(obj, command)
             disp(command)
             writeline(obj.LEOserial,command);
             response = readline(obj.LEOserial)
         end
         
+        %{
+            For localization to reorientate block reading based upon robot
+            orientation to absolute map orientation
+            Utilize bit shifting
+        %}
+        function transformedBlockNum = tranformOri(obj, blocknum, robotPosition)
+            transformedBlockNum = fi(blocknum,0,4);
+            if mod(robotPosition(3),4) == 0
+            elseif mod(robotPosition(3),4) == 1
+                transformedBlockNum = bitrol(transformedBlockNum,1);
+            elseif mod(robotPosition(3),4) == 2
+                transformedBlockNum = bitrol(transformedBlockNum,2);
+            elseif mod(robotPosition(3),4) == 3
+                transformedBlockNum = bitrol(transformedBlockNum,3);
+            end
+            transformedBlockNum = str2num(num2str(transformedBlockNum));
+        end
         
+        %{
+            sends character to LEO to run (metric path + localization execution)
+        %}
         function response = charRunUpdate(obj, command, robotPoint)
             if command == 'S'
                 fprintf("\nStarting\n");
@@ -218,11 +285,19 @@ classdef Metric_MobileGUI < matlab.mixin.SetGet
             elseif command == 'T'
                 %fprintf("Terminate\n");
                 writeline(obj.LEOserial,'T')
+            elseif command == 'C'
+                %fprintf("Checking Walls\n");
+                writeline(obj.LEOserial,'C')
+                response = readline(obj.LEOserial);
+                return
             end
-            readline(obj.LEOserial)
-            response = robotPoint;
+            response = robotPoint
         end
         
+        %{
+            Path Plan master function to execute A* mapping and gradient
+            descent to manuver through map
+        %}
         function pathPlanned = pathPlan(obj, mapText, start, goal)
             obj.Map = mapText;
             obj.maplength = size(obj.Map);
@@ -240,7 +315,11 @@ classdef Metric_MobileGUI < matlab.mixin.SetGet
             
         end
         
-        % Plan a path from a wavefront planning map
+        %{
+            using an A* map, finds a gradient decent and generates path
+            planning for metric path planning (previously set for
+            topological by removing 'F' characters)
+        %}
         function plannedPath = topologicalPath(obj, Amap,x,y,direction)
             plannedPath = "S"; %Start pathing
             currentValue = Amap(x,y);
@@ -372,6 +451,9 @@ classdef Metric_MobileGUI < matlab.mixin.SetGet
             plannedPath = convertStringsToChars(plannedPath); %convert String to char array
         end
         
+        %{
+            create a 2d map using A* and wavefront propagation
+        %}
         function AmapReturn = distanceMapping(obj, Amap, x, y, distance,visitedNodes)
             
             % end conditionals
@@ -424,6 +506,34 @@ classdef Metric_MobileGUI < matlab.mixin.SetGet
             
             AmapReturn = Amap;
         end
+        % readmatrix fucntion can convert the readline string information
+        % to the map martix.
+        % type can control the map output.
+        % 1 is OGrid
+        % 2 is Topo
+        function [matrixReturn] = readmatrix(obj, type)
+            returnedValue = readline(obj.LEOserial);% read string information
+            if strlength(returnedValue)<3           % check the String length (Normally the martix infor is more than 16 char
+                matrixReturn = single(0);           % provide a none double output
+            else
+                matrixNum = str2num(returnedValue); % convert string to number
+                if type == 1                        % OGird
+                    matrix = reshape(matrixNum,4,4);    %convert to 4x4 matrix
+                    matrix(matrix==-1)=15;              %convert all -1 to 15 (same as 99)
+                    matrix(matrix<15)=0;            %convert all none 15 to 0 (empty box)
+                elseif type == 2                    % Topo
+                    matrix = reshape(matrixNum,4,4);    %convert to 4x4 matrix
+                    matrix(matrix==-1)=15;              %convert all -1 to 15
+                end
+            matrixReturn = matrix;                  %send the map matrix
+            end
+            
+        end
+        % StartMap will send mapping command 'M'
+        function StartMap(obj)
+            writeline(obj.LEOserial,'M')
+        end
+        
         
     end
 end
